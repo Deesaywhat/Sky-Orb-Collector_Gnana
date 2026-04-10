@@ -1,5 +1,7 @@
 # Sky-Orb-Collector_Gnana
 
+**I used AI as a development assistant, but the game design, structure, and requirements were defined by me.**
+
 **To run the GAME downlaod the following files:
 SkyOrbCollector_Game.html
 SkyOrbCollector_Manual.html**
