@@ -100,13 +100,6 @@ Additional Features (if possible):
 * Simple UI panels using A-Frame planes
 * Random spawn positions within a radius
 
-Output Format:
-Provide:
-1. Complete working HTML file
-2. Clearly structured code with comments
-3. Instructions on how to run the game
-4. Short explanation of how each part works
-
 Constraints:
 * No violence or blood
 * Keep gameplay simple and achievable
