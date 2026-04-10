@@ -1,871 +1,571 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sky Orb Collector – Gnana Deepika</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sky Orb Collector</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; font-family:'Segoe UI',sans-serif; overflow:hidden; }
 
-  <!-- A-Frame CDN -->
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  /* ── SCREENS ── */
+  .screen {
+    position:fixed; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; z-index:100;
+  }
+  .hidden { display:none !important; }
 
-  <style>
-    /* ── Global overlay styles (non-VR UI) ── */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* FLASH */
+  #s-flash { background:radial-gradient(ellipse at 50% 40%, #0a1540, #000); }
+  #s-flash h1 {
+    font-size:clamp(2.5rem,8vw,5rem); font-weight:900; text-align:center;
+    background:linear-gradient(135deg,#7df9ff,#a78bfa,#f0abfc);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    line-height:1.1; animation:glow 2.5s ease-in-out infinite;
+  }
+  @keyframes glow{ 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.4)} }
+  #s-flash p { color:#a5b4fc; margin:.6rem 0 .2rem; letter-spacing:.2em; text-transform:uppercase; font-size:1rem; }
+  #s-flash .author { color:#c4b5fd; margin:.3rem 0 1.5rem; font-size:.95rem; }
+  #s-flash .author span { color:#f0abfc; font-weight:700; }
+  .orb-demo {
+    width:100px; height:100px; border-radius:50%; margin:1.2rem auto;
+    background:radial-gradient(circle at 35% 32%, #fff, #7df9ff 30%, #3b82f6 65%, #1e1b4b);
+    box-shadow:0 0 40px #7df9ff99; animation:bob 2.5s ease-in-out infinite;
+  }
+  @keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
 
-    body { background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+  /* SETUP */
+  #s-setup { background:radial-gradient(ellipse at 50% 30%, #0f172a, #000); }
+  .box {
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.15);
+    border-radius:1.4rem; padding:2.2rem 2.8rem; text-align:center;
+    color:#fff; width:min(420px,92vw);
+  }
+  .box h2 { font-size:1.7rem; font-weight:800; margin-bottom:1.6rem;
+    background:linear-gradient(135deg,#7df9ff,#a78bfa);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .row { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.3rem; }
+  .row label { color:#c4b5fd; font-size:.97rem; }
+  .toggle { position:relative; width:52px; height:27px; cursor:pointer; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .knob {
+    position:absolute; inset:0; background:#334155; border-radius:27px; transition:background .3s;
+  }
+  .knob::before {
+    content:''; position:absolute; top:3px; left:3px;
+    width:21px; height:21px; background:#fff; border-radius:50%; transition:transform .3s;
+  }
+  .toggle input:checked ~ .knob { background:#6366f1; }
+  .toggle input:checked ~ .knob::before { transform:translateX(25px); }
+  .lvl-row { display:flex; gap:.8rem; justify-content:center; margin-bottom:1.5rem; }
+  .lvl-btn {
+    padding:.6rem 1.5rem; border:2px solid #6366f1; border-radius:50px;
+    background:transparent; color:#a5b4fc; font-weight:700; cursor:pointer; transition:all .2s; font-size:.9rem;
+  }
+  .lvl-btn.on { background:#6366f1; color:#fff; box-shadow:0 0 18px #6366f155; }
+  .hint { font-size:.8rem; color:#475569; line-height:1.5; margin-bottom:1.3rem; }
 
-    /* Shared overlay base */
-    .overlay {
-      position: fixed; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      z-index: 999;
-      transition: opacity .5s ease;
-    }
-    .overlay.hidden { opacity: 0; pointer-events: none; }
+  /* END */
+  #s-end { background:rgba(0,0,0,.9); }
+  #s-end h2 { font-size:clamp(2rem,6vw,3rem); font-weight:900;
+    background:linear-gradient(135deg,#fbbf24,#f59e0b);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:.4rem; }
+  #final-score { font-size:clamp(4rem,12vw,7rem); font-weight:900; color:#7df9ff;
+    text-shadow:0 0 30px #7df9ff77; }
+  #end-msg { color:#94a3b8; margin:.4rem 0 1.8rem; font-size:1rem; }
+  .btn-row { display:flex; gap:.8rem; flex-wrap:wrap; justify-content:center; }
 
-    /* ── FLASH SCREEN ── */
-    #flashScreen {
-      background: radial-gradient(ellipse at 50% 30%, #0d1b5e 0%, #000510 70%);
-    }
-    #flashScreen canvas { position: absolute; inset: 0; }
-    .flash-content {
-      position: relative; z-index: 2;
-      text-align: center; color: #fff;
-      padding: 2rem;
-    }
-    .flash-title {
-      font-size: clamp(2rem, 8vw, 5rem);
-      font-weight: 900;
-      letter-spacing: .08em;
-      background: linear-gradient(135deg, #7df9ff, #a78bfa, #f0abfc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-shadow: none;
-      animation: pulse-title 3s ease-in-out infinite;
-      line-height: 1.1;
-    }
-    @keyframes pulse-title {
-      0%,100% { filter: brightness(1); }
-      50%      { filter: brightness(1.3); }
-    }
-    .flash-sub {
-      font-size: clamp(1rem, 3vw, 1.5rem);
-      color: #a5b4fc;
-      margin-top: .5rem;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-    }
-    .flash-author {
-      margin-top: 1.2rem;
-      font-size: clamp(.9rem, 2.5vw, 1.2rem);
-      color: #c4b5fd;
-      letter-spacing: .15em;
-    }
-    .flash-author span { color: #f0abfc; font-weight: 700; }
-    .orb-ring {
-      margin: 2.5rem auto;
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #7df9ff, #6366f1 60%, #1e1b4b);
-      box-shadow: 0 0 40px #7df9ff88, 0 0 80px #6366f133;
-      animation: float 3s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%,100% { transform: translateY(0) scale(1); }
-      50%      { transform: translateY(-18px) scale(1.05); }
-    }
-    .btn {
-      margin-top: 1rem;
-      padding: .9rem 2.8rem;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      border: none; cursor: pointer;
-      border-radius: 50px;
-      background: linear-gradient(135deg, #6366f1, #a78bfa);
-      color: #fff;
-      box-shadow: 0 0 24px #6366f166;
-      transition: transform .15s, box-shadow .15s;
-    }
-    .btn:hover { transform: scale(1.06); box-shadow: 0 0 40px #a78bfa99; }
-    .btn.danger { background: linear-gradient(135deg, #ef4444, #f97316); }
+  /* BUTTONS */
+  .btn {
+    padding:.8rem 2.2rem; font-size:1rem; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; border:none; cursor:pointer; border-radius:50px;
+    background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff;
+    box-shadow:0 0 20px #6366f155; transition:transform .15s;
+  }
+  .btn:hover { transform:scale(1.07); }
+  .btn.red { background:linear-gradient(135deg,#ef4444,#f97316); }
+  .btn.ghost { background:transparent; border:1px solid #334155; font-size:.85rem; box-shadow:none; }
 
-    /* ── SETUP SCREEN ── */
-    #setupScreen {
-      background: radial-gradient(ellipse at 50% 20%, #0f172a, #000 80%);
-    }
-    .setup-box {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 1.5rem;
-      padding: 2.5rem 3rem;
-      text-align: center;
-      color: #fff;
-      max-width: 420px;
-      width: 90%;
-      backdrop-filter: blur(12px);
-    }
-    .setup-box h2 {
-      font-size: 1.8rem; font-weight: 800;
-      background: linear-gradient(135deg,#7df9ff,#a78bfa);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 1.8rem;
-    }
-    .setup-row {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 1.4rem;
-    }
-    .setup-row label { font-size: 1rem; color: #c4b5fd; }
-    /* Toggle switch */
-    .toggle { position: relative; width: 54px; height: 28px; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute; inset: 0;
-      background: #334155; border-radius: 28px; cursor: pointer;
-      transition: background .3s;
-    }
-    .slider::before {
-      content: '';
-      position: absolute; top: 3px; left: 3px;
-      width: 22px; height: 22px;
-      background: #fff; border-radius: 50%;
-      transition: transform .3s;
-    }
-    .toggle input:checked + .slider { background: #6366f1; }
-    .toggle input:checked + .slider::before { transform: translateX(26px); }
+  /* ── GAME CANVAS ── */
+  #gameCanvas { position:fixed; inset:0; display:block; }
 
-    .level-btns { display: flex; gap: 1rem; justify-content: center; margin-bottom: 1.6rem; }
-    .level-btn {
-      padding: .65rem 1.6rem;
-      border: 2px solid #6366f1; border-radius: 50px;
-      background: transparent; color: #a5b4fc;
-      font-size: .95rem; font-weight: 700; cursor: pointer;
-      transition: all .2s;
-    }
-    .level-btn.active,
-    .level-btn:hover {
-      background: #6366f1; color: #fff;
-      box-shadow: 0 0 20px #6366f166;
-    }
+  /* ── HUD ── */
+  #hud {
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:.7rem 1rem; pointer-events:none;
+  }
+  .hud-panel {
+    background:rgba(15,23,42,.82); border:1px solid rgba(99,102,241,.3);
+    border-radius:.7rem; padding:.4rem .9rem; color:#fff; font-size:1.05rem; font-weight:700;
+  }
+  #hud-score { color:#7df9ff; }
+  #hud-level { color:#a78bfa; }
+  #hud-timer { color:#fbbf24; }
 
-    /* ── END SCREEN ── */
-    #endScreen {
-      background: rgba(0,0,0,.85);
-      backdrop-filter: blur(16px);
-    }
-    .end-box {
-      text-align: center; color: #fff; padding: 2.5rem;
-    }
-    .end-box h2 {
-      font-size: clamp(2rem,6vw,3.5rem); font-weight: 900;
-      background: linear-gradient(135deg,#fbbf24,#f59e0b);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: .5rem;
-    }
-    .end-box .final-score {
-      font-size: clamp(3rem,10vw,6rem); font-weight: 900;
-      color: #7df9ff;
-      text-shadow: 0 0 30px #7df9ff88;
-    }
-    .end-box p { color: #94a3b8; margin: .5rem 0 2rem; font-size: 1.1rem; }
-    .end-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  /* ── CROSSHAIR ── */
+  #crosshair {
+    position:fixed; pointer-events:none; z-index:60;
+    transform:translate(-50%,-50%);
+  }
+  #crosshair svg { display:block; }
 
-    /* Stars background on flash screen */
-    #starCanvas { position: absolute; inset: 0; }
-  </style>
+  /* ── GAZE BAR ── */
+  #gaze-bar-wrap {
+    position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
+    width:200px; height:10px; background:rgba(255,255,255,.15);
+    border-radius:10px; overflow:hidden; z-index:60; opacity:0; transition:opacity .2s;
+  }
+  #gaze-bar { height:100%; width:0%; background:linear-gradient(90deg,#7df9ff,#6366f1); border-radius:10px; transition:width .05s linear; }
+
+  /* ── FLOATING SCORE POPS ── */
+  .pop {
+    position:fixed; font-size:1.6rem; font-weight:900; pointer-events:none; z-index:70;
+    animation:pop-up .9s ease-out forwards;
+  }
+  @keyframes pop-up{ 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-80px) scale(1.3)} }
+</style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════
-     FLASH SCREEN
-═══════════════════════════════════════════════ -->
-<div class="overlay" id="flashScreen">
-  <canvas id="starCanvas"></canvas>
-  <div class="flash-content">
-    <div class="flash-title">Sky Orb<br>Collector</div>
-    <div class="flash-sub">A Mobile VR Experience</div>
-    <div class="flash-author">Created by <span>Gnana Deepika</span></div>
-    <div class="orb-ring"></div>
-    <div class="flash-author" style="font-size:.9rem;margin-bottom:1.5rem;color:#64748b;">
-      CMPT 461 · Immersive Computing · Trinity Western University
-    </div>
-    <button class="btn" onclick="showSetup()">▶ &nbsp;Start Game</button>
+<!-- ══════════ FLASH SCREEN ══════════ -->
+<div class="screen" id="s-flash">
+  <h1>Sky Orb<br>Collector</h1>
+  <p>A Mobile VR Experience</p>
+  <div class="author">Created by <span>Gnana Deepika</span></div>
+  <div class="orb-demo"></div>
+  <div class="author" style="font-size:.78rem;color:#475569;margin-bottom:1.2rem;">
+    CMPT 461 &middot; Immersive Computing &middot; Trinity Western University
   </div>
+  <button class="btn" onclick="goSetup()">&#9654; Start Game</button>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     SETUP SCREEN
-═══════════════════════════════════════════════ -->
-<div class="overlay hidden" id="setupScreen">
-  <div class="setup-box">
-    <h2>⚙ Game Setup</h2>
-
-    <div class="setup-row">
+<!-- ══════════ SETUP SCREEN ══════════ -->
+<div class="screen hidden" id="s-setup">
+  <div class="box">
+    <h2>&#9881; Game Setup</h2>
+    <div class="row">
       <label>Background Music</label>
       <label class="toggle">
-        <input type="checkbox" id="musicToggle" checked>
-        <span class="slider"></span>
+        <input type="checkbox" id="music-chk" checked>
+        <span class="knob"></span>
       </label>
     </div>
-
-    <div class="setup-row" style="flex-direction:column;gap:.6rem;">
-      <label style="margin-bottom:.4rem;">Select Level</label>
-      <div class="level-btns">
-        <button class="level-btn active" onclick="selectLevel(1,this)">🌤 Level 1 · Easy</button>
-        <button class="level-btn"        onclick="selectLevel(2,this)">⛈ Level 2 · Hard</button>
+    <div class="row" style="flex-direction:column;gap:.5rem;">
+      <label style="margin-bottom:.2rem;">Select Level</label>
+      <div class="lvl-row">
+        <button class="lvl-btn on" id="lb1" onclick="pickLevel(1)">&#127780; Level 1 &bull; Easy</button>
+        <button class="lvl-btn"    id="lb2" onclick="pickLevel(2)">&#9928; Level 2 &bull; Hard</button>
       </div>
     </div>
-
-    <p style="font-size:.82rem;color:#475569;margin-bottom:1.4rem;line-height:1.5;">
-      Gaze at orbs to collect them. Green orbs = +10 pts.<br>
-      Level 2 adds red orbs that cost −5 pts. You have 60 seconds!
+    <p class="hint">
+      Move your mouse to aim the ring cursor at orbs.<br>
+      Hold your gaze on an orb for 1.5 s to collect it!<br>
+      Green orbs = +10 pts &nbsp;|&nbsp; Red orbs = &minus;5 pts
     </p>
-
-    <button class="btn" onclick="startGame()">🚀 &nbsp;Launch Game</button>
-    <button class="btn" style="margin-top:.8rem;background:transparent;border:1px solid #334155;font-size:.85rem;" onclick="showFlash()">← Back</button>
+    <button class="btn" onclick="launchGame()">&#128640; Launch Game</button><br>
+    <button class="btn ghost" onclick="goFlash()" style="margin-top:.6rem;">&#8592; Back</button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     END SCREEN
-═══════════════════════════════════════════════ -->
-<div class="overlay hidden" id="endScreen">
-  <div class="end-box">
-    <h2>⭐ Time's Up!</h2>
-    <div class="final-score" id="finalScore">0</div>
-    <p id="endMsg">Nice try — keep collecting!</p>
-    <div class="end-btns">
-      <button class="btn" onclick="restartLevel()">🔄 Replay Level</button>
-      <button class="btn" id="nextLevelBtn" onclick="goNextLevel()" style="display:none">⏩ Next Level</button>
-      <button class="btn danger" onclick="showSetup()">🏠 Main Menu</button>
-    </div>
+<!-- ══════════ END SCREEN ══════════ -->
+<div class="screen hidden" id="s-end">
+  <h2>&#11088; Time's Up!</h2>
+  <div id="final-score">0</div>
+  <p id="end-msg">Keep collecting!</p>
+  <div class="btn-row">
+    <button class="btn" onclick="replayGame()">&#128260; Replay</button>
+    <button class="btn" id="next-btn" onclick="nextLevel()" style="display:none">&#9193; Next Level</button>
+    <button class="btn red" onclick="goSetup()">&#127968; Menu</button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     A-FRAME SCENE
-═══════════════════════════════════════════════ -->
-<a-scene
-  id="vrScene"
-  vr-mode-ui="enabled: true"
-  embedded
-  style="display:none;width:100vw;height:100vh;"
-  renderer="antialias: true; colorManagement: true;"
-  loading-screen="enabled: false"
->
+<!-- ══════════ GAME CANVAS ══════════ -->
+<canvas id="gameCanvas"></canvas>
 
-  <!-- ── Assets ── -->
-  <a-assets>
-    <!-- Procedural textures generated via canvas, embedded as data URIs via JS -->
-    <img id="orbTexGood"  src="" alt="">
-    <img id="orbTexBad"   src="" alt="">
-    <img id="orbTexBg"    src="" alt="">
-    <img id="groundTex"   src="" alt="">
+<!-- ══════════ HUD ══════════ -->
+<div id="hud" class="hidden">
+  <div class="hud-panel" id="hud-score">Score: 0</div>
+  <div class="hud-panel" id="hud-level">Level 1</div>
+  <div class="hud-panel" id="hud-timer">Time: 60</div>
+</div>
 
-    <!-- Audio elements (Web Audio API tones generated in JS) -->
-    <audio id="bgMusic"     loop preload="auto"></audio>
-    <audio id="collectSound"      preload="auto"></audio>
-    <audio id="wrongSound"        preload="auto"></audio>
-  </a-assets>
+<!-- ══════════ CROSSHAIR ══════════ -->
+<div id="crosshair">
+  <svg width="36" height="36" viewBox="0 0 36 36">
+    <circle cx="18" cy="18" r="14" fill="none" stroke="#7df9ff" stroke-width="2" opacity="0.8"/>
+    <circle cx="18" cy="18" r="3"  fill="#7df9ff" opacity="0.9"/>
+    <circle id="gaze-ring" cx="18" cy="18" r="14" fill="none"
+            stroke="#ffffff" stroke-width="2.5"
+            stroke-dasharray="0 88" stroke-linecap="round"
+            transform="rotate(-90 18 18)" opacity="0.9"/>
+  </svg>
+</div>
 
-  <!-- ── Sky / Environment ── -->
-  <a-sky id="gameSky" color="#87ceeb" radius="500"></a-sky>
+<!-- ══════════ GAZE PROGRESS BAR ══════════ -->
+<div id="gaze-bar-wrap"><div id="gaze-bar"></div></div>
 
-  <!-- ── Ground ── -->
-  <a-plane
-    id="ground"
-    position="0 -5 0"
-    rotation="-90 0 0"
-    width="200" height="200"
-    material="src: #groundTex; repeat: 20 20; roughness: 0.9;"
-  ></a-plane>
-
-  <!-- ── Floating cloud decorations (Level 1) ── -->
-  <a-entity id="cloudGroup"></a-entity>
-
-  <!-- ── Orb container ── -->
-  <a-entity id="orbContainer"></a-entity>
-
-  <!-- ── Particle ring (decorative) ── -->
-  <a-entity id="particleRing"></a-entity>
-
-  <!-- ── HUD (always visible scoreboard) ── -->
-  <a-entity id="hud" position="0 0 0">
-
-    <!-- HUD panel anchored to camera -->
-    <a-camera id="playerCamera"
-      wasd-controls="enabled: false"
-      look-controls="enabled: true; reverseMouseDrag: false; touchEnabled: true;"
-      position="0 1.6 0"
-    >
-      <!-- Gaze cursor with fuse -->
-      <a-cursor
-        id="gazeCursor"
-        fuse="true"
-        fuse-timeout="1500"
-        color="#7df9ff"
-        opacity="0.9"
-        geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.02;"
-        material="color: #7df9ff; shader: flat;"
-        animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150;"
-        raycaster="objects: .collectible"
-      ></a-cursor>
-
-      <!-- Score panel (top-left style in VR space) -->
-      <a-plane
-        id="scorePanel"
-        position="-0.55 0.35 -1"
-        width="0.55" height="0.18"
-        material="color: #0f172a; opacity: 0.75; shader: flat;"
-        geometry="primitive: plane;"
-      >
-        <a-text id="scoreText" value="Score: 0" color="#7df9ff"
-          align="center" position="0 0.02 0.01" width="1.1" font="exo2bold"></a-text>
-      </a-plane>
-
-      <!-- Timer panel (top-right) -->
-      <a-plane
-        id="timerPanel"
-        position="0.55 0.35 -1"
-        width="0.55" height="0.18"
-        material="color: #0f172a; opacity: 0.75; shader: flat;"
-      >
-        <a-text id="timerText" value="Time: 60" color="#fbbf24"
-          align="center" position="0 0.02 0.01" width="1.1" font="exo2bold"></a-text>
-      </a-plane>
-
-      <!-- Level indicator -->
-      <a-plane
-        position="0 0.35 -1"
-        width="0.4" height="0.18"
-        material="color: #1e1b4b; opacity: 0.75; shader: flat;"
-      >
-        <a-text id="levelText" value="Level 1" color="#a78bfa"
-          align="center" position="0 0.02 0.01" width="0.8" font="exo2bold"></a-text>
-      </a-plane>
-
-      <!-- Gaze progress ring (shows under cursor while gazing) -->
-    </a-camera>
-  </a-entity>
-
-</a-scene>
-
-<!-- ═══════════════════════════════════════════════
-     GAME LOGIC
-═══════════════════════════════════════════════ -->
 <script>
 'use strict';
 
-/* ─────────────────────────────────────────────
-   STATE
-───────────────────────────────────────────── */
-const STATE = {
-  score:       0,
-  timeLeft:    60,
-  level:       1,
-  musicOn:     true,
-  running:     false,
-  timerHandle: null,
-  orbHandles:  [],
-};
+// ─── CONFIG ───────────────────────────────
+const FUSE_MS    = 1500;   // ms to gaze before collecting
+const LEVEL_TIME = 60;     // seconds per level
+const GOOD_PTS   = 10;
+const BAD_PTS    = 5;
 
-/* ─────────────────────────────────────────────
-   STAR CANVAS (flash screen background)
-───────────────────────────────────────────── */
-(function initStars() {
-  const canvas = document.getElementById('starCanvas');
-  const ctx    = canvas.getContext('2d');
-  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; drawStars(); }
-  function drawStars() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < 200; i++) {
-      const x = Math.random() * canvas.width;
-      const y = Math.random() * canvas.height;
-      const r = Math.random() * 1.5;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${Math.random() * .8 + .2})`;
-      ctx.fill();
-    }
+// ─── STATE ────────────────────────────────
+let level=1, score=0, timeLeft=LEVEL_TIME;
+let running=false, musicOn=true;
+let timerInterval=null, spawnTimeout=null;
+let orbs=[];          // active orb objects
+let gazeTarget=null;  // orb currently being gazed at
+let gazeStart=0;      // timestamp gaze began
+let mx=window.innerWidth/2, my=window.innerHeight/2; // mouse pos
+
+// ─── CANVAS SETUP ─────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+function resize(){
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', ()=>{ resize(); buildStars(); });
+resize();
+
+// ─── CROSSHAIR follows mouse ──────────────
+const crosshair = document.getElementById('crosshair');
+document.addEventListener('mousemove', e=>{
+  mx = e.clientX; my = e.clientY;
+  crosshair.style.left = mx+'px';
+  crosshair.style.top  = my+'px';
+});
+// Centre crosshair initially
+crosshair.style.left = mx+'px';
+crosshair.style.top  = my+'px';
+
+// ─── STARS (background) ───────────────────
+let stars=[];
+function buildStars(){
+  stars=[];
+  for(let i=0;i<180;i++){
+    stars.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      r:Math.random()*1.4+.3,
+      a:Math.random()
+    });
   }
-  window.addEventListener('resize', resize);
-  resize();
-})();
-
-/* ─────────────────────────────────────────────
-   PROCEDURAL TEXTURE GENERATORS
-   Returns a data-URL for use in A-Frame <img>
-───────────────────────────────────────────── */
-function makeOrbTexture(color1, color2, size = 256) {
-  const c   = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
-  // Radial gradient (glossy orb look)
-  const g = ctx.createRadialGradient(size*.35, size*.3, size*.05, size*.5, size*.5, size*.55);
-  g.addColorStop(0, '#ffffff');
-  g.addColorStop(0.2, color1);
-  g.addColorStop(0.75, color2);
-  g.addColorStop(1, '#000000');
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(size/2, size/2, size/2, 0, Math.PI*2);
-  ctx.fill();
-  // Specular highlight
-  const hl = ctx.createRadialGradient(size*.32, size*.28, 0, size*.38, size*.33, size*.18);
-  hl.addColorStop(0, 'rgba(255,255,255,0.8)');
-  hl.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = hl;
-  ctx.beginPath();
-  ctx.arc(size*.38, size*.33, size*.18, 0, Math.PI*2);
-  ctx.fill();
-  return c.toDataURL();
 }
+buildStars();
 
-function makeSkyTexture(topColor, bottomColor) {
-  const c = document.createElement('canvas');
-  c.width = 2; c.height = 256;
-  const ctx = c.getContext('2d');
-  const g = ctx.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, topColor);
-  g.addColorStop(1, bottomColor);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 2, 256);
-  return c.toDataURL();
-}
-
-function makeGroundTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const ctx = c.getContext('2d');
-  // Subtle cloud/mist texture
-  ctx.fillStyle = '#dbeafe';
-  ctx.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 60; i++) {
-    const x = Math.random()*256, y = Math.random()*256;
-    const g = ctx.createRadialGradient(x,y,2,x,y,30+Math.random()*30);
-    g.addColorStop(0, 'rgba(255,255,255,0.5)');
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 256, 256);
-  }
-  return c.toDataURL();
-}
-
-/* ─────────────────────────────────────────────
-   AUDIO – Web Audio API tones (no external files)
-───────────────────────────────────────────── */
-let audioCtx;
-function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// ─── AUDIO (Web Audio, no files needed) ───
+let audioCtx=null;
+function ac(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
   return audioCtx;
 }
+function beep(freq,type,dur,vol){
+  vol=vol||0.25;
+  try{
+    const c=ac(), o=c.createOscillator(), g=c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sndCollect(){ beep(523,'sine',.1); setTimeout(()=>beep(659,'sine',.1),65); setTimeout(()=>beep(784,'sine',.2),130); }
+function sndWrong()  { beep(260,'sawtooth',.08,.2); setTimeout(()=>beep(160,'sawtooth',.13,.2),70); }
 
-function playTone(freq, type, duration, gain = 0.3) {
-  try {
-    const ctx  = getAudioCtx();
-    const osc  = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    osc.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    osc.type      = type;
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
-  } catch(e) {}
+let bgMusicTimer=null, bgIdx=0;
+const BG=[261,293,329,349,392,440,493,523];
+function startMusic(){ if(!musicOn||bgMusicTimer)return; bgMusicTimer=setInterval(()=>{ if(musicOn)beep(BG[bgIdx++%BG.length],'triangle',.36,.055); },480); }
+function stopMusic() { clearInterval(bgMusicTimer); bgMusicTimer=null; }
+
+// ─── NAV HELPERS ──────────────────────────
+function show(id){ document.getElementById(id).classList.remove('hidden'); }
+function hide(id){ document.getElementById(id).classList.add('hidden'); }
+
+function goFlash(){
+  hide('s-setup'); hide('s-end'); show('s-flash');
+  hide('hud'); stopGame();
+}
+function goSetup(){
+  hide('s-flash'); hide('s-end'); show('s-setup');
+  hide('hud'); stopGame();
 }
 
-function playCollectSound() {
-  // Pleasant ascending ding
-  playTone(523, 'sine', 0.15, 0.25);
-  setTimeout(() => playTone(659, 'sine', 0.15, 0.25), 80);
-  setTimeout(() => playTone(784, 'sine', 0.25, 0.25), 160);
+let chosenLevel=1;
+function pickLevel(l){
+  chosenLevel=l;
+  document.getElementById('lb1').className='lvl-btn'+(l===1?' on':'');
+  document.getElementById('lb2').className='lvl-btn'+(l===2?' on':'');
 }
 
-function playWrongSound() {
-  // Descending buzz
-  playTone(300, 'sawtooth', 0.1, 0.2);
-  setTimeout(() => playTone(200, 'sawtooth', 0.15, 0.2), 80);
+// ─── LAUNCH GAME ──────────────────────────
+function launchGame(){
+  musicOn = document.getElementById('music-chk').checked;
+  level   = chosenLevel;
+  startRound();
+}
+function replayGame(){ hide('s-end'); startRound(); }
+function nextLevel() { chosenLevel=2; level=2; hide('s-end'); startRound(); }
+
+function startRound(){
+  score=0; timeLeft=LEVEL_TIME; running=true;
+  orbs=[]; gazeTarget=null;
+  hide('s-flash'); hide('s-setup'); hide('s-end');
+  show('hud');
+  updateHUD();
+  stopGame();    // clear old intervals
+  running=true;
+  startTimer();
+  scheduleSpawn();
+  startMusic();
+  requestAnimationFrame(loop);
 }
 
-// ── Background music (simple oscillator loop) ──
-let bgMusicInterval = null;
-const bgNotes = [261, 293, 329, 349, 392, 440, 493, 523];
-
-function startBgMusic() {
-  if (!STATE.musicOn) return;
-  let i = 0;
-  bgMusicInterval = setInterval(() => {
-    if (!STATE.musicOn) return;
-    const freq = bgNotes[i % bgNotes.length];
-    playTone(freq, 'triangle', 0.4, 0.08);
-    i++;
-  }, 500);
+function stopGame(){
+  running=false;
+  clearInterval(timerInterval); timerInterval=null;
+  clearTimeout(spawnTimeout);   spawnTimeout=null;
+  stopMusic();
+  orbs=[];
+  gazeTarget=null;
 }
 
-function stopBgMusic() {
-  if (bgMusicInterval) { clearInterval(bgMusicInterval); bgMusicInterval = null; }
-}
-
-/* ─────────────────────────────────────────────
-   NAV HELPERS
-───────────────────────────────────────────── */
-function hide(id) { document.getElementById(id).classList.add('hidden'); }
-function show(id) { document.getElementById(id).classList.remove('hidden'); }
-
-function showFlash()  { show('flashScreen'); hide('setupScreen'); hide('endScreen'); document.getElementById('vrScene').style.display = 'none'; }
-function showSetup()  { hide('flashScreen'); show('setupScreen'); hide('endScreen'); document.getElementById('vrScene').style.display = 'none'; stopGame(); }
-
-let selectedLevel = 1;
-function selectLevel(lvl, btn) {
-  selectedLevel = lvl;
-  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-/* ─────────────────────────────────────────────
-   START / STOP GAME
-───────────────────────────────────────────── */
-function startGame() {
-  STATE.musicOn = document.getElementById('musicToggle').checked;
-  STATE.level   = selectedLevel;
-  initGame();
-}
-
-function initGame() {
-  STATE.score   = 0;
-  STATE.timeLeft = 60;
-  STATE.running  = true;
-
-  // Show scene
-  hide('flashScreen'); hide('setupScreen'); hide('endScreen');
-  document.getElementById('vrScene').style.display = 'block';
-
-  // Small delay for A-Frame to fully init
-  setTimeout(() => {
-    applyLevelEnvironment();
+// ─── TIMER ────────────────────────────────
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(!running)return;
+    timeLeft--;
     updateHUD();
-    clearOrbs();
-    spawnOrbWave();
-    startTimer();
-    if (STATE.musicOn) startBgMusic();
-  }, 300);
+    if(timeLeft<=0){ clearInterval(timerInterval); endGame(); }
+  },1000);
 }
 
-function stopGame() {
-  STATE.running = false;
-  stopBgMusic();
-  clearOrbs();
-  if (STATE.timerHandle) { clearInterval(STATE.timerHandle); STATE.timerHandle = null; }
+// ─── HUD ──────────────────────────────────
+function updateHUD(){
+  document.getElementById('hud-score').textContent = 'Score: '+score;
+  document.getElementById('hud-level').textContent = 'Level '+level;
+  const t=document.getElementById('hud-timer');
+  t.textContent='Time: '+timeLeft;
+  t.style.color=timeLeft<=10?'#ef4444':'#fbbf24';
 }
 
-function restartLevel() { hide('endScreen'); initGame(); }
-
-function goNextLevel() {
-  STATE.level = 2;
-  selectedLevel = 2;
-  hide('endScreen');
-  initGame();
+// ─── ORB DEFINITIONS ──────────────────────
+// Each orb: {x,y,vy,r,bad,phase,speed,alpha}
+function makeOrb(){
+  const bad   = level===2 && Math.random()<.3;
+  const r     = 28 + Math.random()*18;
+  const margin= r+20;
+  const x     = margin + Math.random()*(canvas.width -margin*2);
+  // Start from top, drift downward
+  const y     = -r - Math.random()*200;
+  const speed = level===1 ? (.4+Math.random()*.5) : (.9+Math.random()*1.1);
+  return { x, y, r, bad, speed, phase:Math.random()*Math.PI*2, alpha:1, collected:false };
 }
 
-/* ─────────────────────────────────────────────
-   LEVEL ENVIRONMENT
-───────────────────────────────────────────── */
-function applyLevelEnvironment() {
-  const sky    = document.getElementById('gameSky');
-  const ground = document.getElementById('ground');
-  const scene  = document.getElementById('vrScene');
-  const lvlTxt = document.getElementById('levelText');
+function scheduleSpawn(){
+  if(!running)return;
+  const delay = level===1 ? 900 : 600;
+  spawnTimeout=setTimeout(()=>{
+    if(!running)return;
+    // Keep between 5-9 orbs on screen
+    const target = level===1?5:9;
+    while(orbs.length<target) orbs.push(makeOrb());
+    scheduleSpawn();
+  }, delay);
+}
 
-  if (STATE.level === 1) {
-    sky.setAttribute('color', '#87ceeb');
-    ground.setAttribute('material', 'color: #bfdbfe; roughness: 0.8; metalness: 0.1;');
-    scene.setAttribute('fog', 'type: linear; color: #bae6fd; near: 80; far: 200;');
-    lvlTxt.setAttribute('value', 'Level 1');
+// ─── GAZE DETECTION ───────────────────────
+const gazeRing  = document.getElementById('gaze-ring');
+const gazeWrap  = document.getElementById('gaze-bar-wrap');
+const gazeBar   = document.getElementById('gaze-bar');
+const CIRC      = 2*Math.PI*14; // circumference of crosshair ring (r=14)
 
-    // Rebuild cloud decorations
-    buildClouds();
+function checkGaze(){
+  let hit=null;
+  // Find topmost orb under cursor (reverse so latest spawned on top)
+  for(let i=orbs.length-1;i>=0;i--){
+    const o=orbs[i];
+    if(o.collected)continue;
+    const dx=mx-o.x, dy=my-o.y;
+    if(Math.sqrt(dx*dx+dy*dy)<o.r){ hit=o; break; }
+  }
+
+  if(hit!==gazeTarget){
+    gazeTarget=hit;
+    gazeStart=performance.now();
+  }
+
+  if(gazeTarget){
+    const elapsed=performance.now()-gazeStart;
+    const pct=Math.min(elapsed/FUSE_MS,1);
+    // Animate crosshair ring
+    gazeRing.setAttribute('stroke-dasharray', (pct*CIRC)+' '+(CIRC*(1-pct)));
+    // Gaze bar
+    gazeWrap.style.opacity='1';
+    gazeBar.style.width=(pct*100)+'%';
+    if(pct>=1){ collectOrb(gazeTarget); gazeTarget=null; }
   } else {
-    sky.setAttribute('color', '#1e293b');
-    ground.setAttribute('material', 'color: #0f172a; roughness: 1; metalness: 0;');
-    scene.setAttribute('fog', 'type: linear; color: #1e293b; near: 40; far: 120;');
-    lvlTxt.setAttribute('value', 'Level 2');
-    document.getElementById('cloudGroup').innerHTML = ''; // no clouds in storm
-    addLightning();
-  }
-
-  // Set orb textures
-  document.getElementById('orbTexGood').src = makeOrbTexture('#7df9ff', '#3b82f6');
-  document.getElementById('orbTexBad').src  = makeOrbTexture('#fca5a5', '#dc2626');
-}
-
-/* ─────────────────────────────────────────────
-   CLOUDS (Level 1 decoration)
-───────────────────────────────────────────── */
-function buildClouds() {
-  const container = document.getElementById('cloudGroup');
-  container.innerHTML = '';
-  for (let i = 0; i < 12; i++) {
-    const angle = (i / 12) * Math.PI * 2;
-    const r = 20 + Math.random() * 30;
-    const x = Math.cos(angle) * r;
-    const z = Math.sin(angle) * r;
-    const y = 4 + Math.random() * 8;
-    const s = 1 + Math.random() * 2;
-
-    const cloud = document.createElement('a-entity');
-    // Each cloud = 3 overlapping spheres
-    for (let j = 0; j < 3; j++) {
-      const sphere = document.createElement('a-sphere');
-      sphere.setAttribute('radius', (s * (.8 + j * .3)));
-      sphere.setAttribute('position', `${j * s * .7} ${j * .2} 0`);
-      sphere.setAttribute('material', 'color: #f0f9ff; opacity: 0.85; shader: flat;');
-      cloud.appendChild(sphere);
-    }
-    cloud.setAttribute('position', `${x} ${y} ${z}`);
-    cloud.setAttribute('animation', `property: position; to: ${x + 3} ${y} ${z}; dur: ${5000 + i*800}; dir: alternate; loop: true; easing: easeInOutSine;`);
-    container.appendChild(cloud);
+    gazeRing.setAttribute('stroke-dasharray','0 '+CIRC);
+    gazeWrap.style.opacity='0';
+    gazeBar.style.width='0%';
   }
 }
 
-/* ─────────────────────────────────────────────
-   LIGHTNING (Level 2)
-───────────────────────────────────────────── */
-function addLightning() {
-  setInterval(() => {
-    if (!STATE.running || STATE.level !== 2) return;
-    const sky = document.getElementById('gameSky');
-    sky.setAttribute('color', '#334155');
-    setTimeout(() => sky.setAttribute('color', '#1e293b'), 80);
-  }, 3000 + Math.random() * 4000);
-}
-
-/* ─────────────────────────────────────────────
-   ORB SPAWNING
-───────────────────────────────────────────── */
-function clearOrbs() {
-  STATE.orbHandles.forEach(h => clearTimeout(h));
-  STATE.orbHandles = [];
-  const c = document.getElementById('orbContainer');
-  while (c.firstChild) c.removeChild(c.firstChild);
-}
-
-function randomPos(radius = 8) {
-  const angle = Math.random() * Math.PI * 2;
-  const dist  = radius * (.5 + Math.random() * .5);
-  const x     = Math.cos(angle) * dist;
-  const z     = Math.sin(angle) * dist;
-  const y     = .5 + Math.random() * 4; // floating height
-  return { x, y, z };
-}
-
-function spawnOrb(isBad) {
-  if (!STATE.running) return;
-
-  const pos = randomPos(STATE.level === 1 ? 8 : 6);
-  const container = document.getElementById('orbContainer');
-
-  const orb = document.createElement('a-sphere');
-  const radius = .25 + Math.random() * .2;
-  const texId  = isBad ? '#orbTexBad' : '#orbTexGood';
-  const color  = isBad ? '#ef4444' : '#7df9ff';
-  const emissive = isBad ? '#7f1d1d' : '#0e7490';
-
-  orb.setAttribute('radius', radius);
-  orb.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
-  orb.setAttribute('material', `src: ${texId}; color: ${color}; emissive: ${emissive}; emissiveIntensity: 0.4; roughness: 0.2; metalness: 0.5;`);
-  orb.setAttribute('class', 'collectible');
-  orb.dataset.bad = isBad ? '1' : '0';
-
-  // Floating animation
-  const floatY   = pos.y + 1.2;
-  const floatDur = STATE.level === 1 ? (2500 + Math.random()*1500) : (1200 + Math.random()*800);
-  orb.setAttribute('animation__float', `property: position; to: ${pos.x} ${floatY} ${pos.z}; dur: ${floatDur}; dir: alternate; loop: true; easing: easeInOutSine;`);
-  orb.setAttribute('animation__spin',  `property: rotation; to: 0 360 0; dur: ${3000 + Math.random()*2000}; loop: true; easing: linear;`);
-
-  // Glow ring
-  const ring = document.createElement('a-torus');
-  ring.setAttribute('radius', radius * 1.4);
-  ring.setAttribute('radius-tubular', radius * .08);
-  ring.setAttribute('material', `color: ${color}; emissive: ${color}; emissiveIntensity: 0.6; opacity: 0.5; transparent: true; shader: flat;`);
-  ring.setAttribute('animation__ring', `property: rotation; to: 0 360 0; dur: 2000; loop: true; easing: linear;`);
-  orb.appendChild(ring);
-
-  // Gaze interaction via cursor click event (fuse fires 'click')
-  orb.addEventListener('click', () => onOrbCollected(orb, isBad));
-  // Visual feedback on hover start
-  orb.addEventListener('mouseenter', () => {
-    orb.setAttribute('animation__scale', `property: scale; to: 1.3 1.3 1.3; dur: 200; easing: easeOutQuad;`);
-  });
-  orb.addEventListener('mouseleave', () => {
-    orb.setAttribute('animation__scale', `property: scale; to: 1 1 1; dur: 200; easing: easeOutQuad;`);
-  });
-
-  container.appendChild(orb);
-
-  // Auto-despawn after a few seconds (keep scene from filling up)
-  const despawnDelay = STATE.level === 1 ? 8000 : 5000;
-  const handle = setTimeout(() => {
-    if (orb.parentNode) orb.parentNode.removeChild(orb);
-    // Spawn replacement
-    if (STATE.running) {
-      const h2 = setTimeout(() => spawnOrb(STATE.level === 2 && Math.random() < .3), 500);
-      STATE.orbHandles.push(h2);
-    }
-  }, despawnDelay);
-  STATE.orbHandles.push(handle);
-}
-
-function spawnOrbWave() {
-  if (!STATE.running) return;
-  const count = STATE.level === 1 ? 6 : 8;
-  for (let i = 0; i < count; i++) {
-    const h = setTimeout(() => {
-      if (!STATE.running) return;
-      const isBad = STATE.level === 2 && Math.random() < .3;
-      spawnOrb(isBad);
-    }, i * 400);
-    STATE.orbHandles.push(h);
-  }
-}
-
-/* ─────────────────────────────────────────────
-   ORB COLLECTED
-───────────────────────────────────────────── */
-function onOrbCollected(orb, isBad) {
-  if (!STATE.running) return;
-  if (!orb.parentNode) return;
-
-  // Score update
-  if (isBad) {
-    STATE.score = Math.max(0, STATE.score - 5);
-    playWrongSound();
-    showFloatingText(orb, '−5', '#ef4444');
+// ─── COLLECT ──────────────────────────────
+function collectOrb(orb){
+  if(orb.collected)return;
+  orb.collected=true;
+  if(orb.bad){
+    score=Math.max(0,score-BAD_PTS);
+    sndWrong();
+    popText('-5','#ef4444',orb.x,orb.y);
   } else {
-    STATE.score += 10;
-    playCollectSound();
-    showFloatingText(orb, '+10', '#7df9ff');
+    score+=GOOD_PTS;
+    sndCollect();
+    popText('+10','#7df9ff',orb.x,orb.y);
   }
   updateHUD();
+  // Remove after short burst
+  setTimeout(()=>{ orbs=orbs.filter(o=>o!==orb); },300);
+}
 
-  // Burst animation then remove
-  orb.setAttribute('animation__burst', `property: scale; to: 2 2 2; dur: 180; easing: easeOutQuad;`);
-  orb.setAttribute('animation__fade', `property: material.opacity; to: 0; dur: 180; easing: easeOutQuad;`);
-  setTimeout(() => { if (orb.parentNode) orb.parentNode.removeChild(orb); }, 200);
+// ─── FLOATING TEXT POP ────────────────────
+function popText(txt,color,x,y){
+  const el=document.createElement('div');
+  el.className='pop';
+  el.textContent=txt;
+  el.style.color=color;
+  el.style.left=x+'px';
+  el.style.top=y+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
 
-  // Spawn a new orb shortly after
-  if (STATE.running) {
-    const h = setTimeout(() => {
-      if (!STATE.running) return;
-      const newBad = STATE.level === 2 && Math.random() < .3;
-      spawnOrb(newBad);
-    }, 800);
-    STATE.orbHandles.push(h);
+// ─── DRAW ─────────────────────────────────
+let frame=0;
+function loop(){
+  if(!running)return;
+  frame++;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Sky gradient
+  const sky=ctx.createLinearGradient(0,0,0,canvas.height);
+  if(level===1){
+    sky.addColorStop(0,'#0c2461'); sky.addColorStop(1,'#1e90ff');
+  } else {
+    sky.addColorStop(0,'#0d0d0d'); sky.addColorStop(1,'#1a1a2e');
   }
-}
+  ctx.fillStyle=sky; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-/* ─────────────────────────────────────────────
-   FLOATING SCORE TEXT (3D)
-───────────────────────────────────────────── */
-function showFloatingText(orb, txt, color) {
-  const pos = orb.getAttribute('position');
-  const label = document.createElement('a-text');
-  label.setAttribute('value', txt);
-  label.setAttribute('color', color);
-  label.setAttribute('align', 'center');
-  label.setAttribute('width', '3');
-  label.setAttribute('position', `${pos.x} ${pos.y + .5} ${pos.z}`);
-  label.setAttribute('billboard', '');
-  label.setAttribute('animation__up', `property: position; to: ${pos.x} ${pos.y + 2} ${pos.z}; dur: 900; easing: easeOutQuad;`);
-  label.setAttribute('animation__fade', `property: material.opacity; to: 0; dur: 900; easing: easeOutQuad;`);
-  document.getElementById('orbContainer').appendChild(label);
-  setTimeout(() => { if (label.parentNode) label.parentNode.removeChild(label); }, 950);
-}
+  // Stars
+  stars.forEach(s=>{
+    ctx.globalAlpha=s.a*(.5+.5*Math.sin(frame*.02+s.x));
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha=1;
 
-/* ─────────────────────────────────────────────
-   TIMER
-───────────────────────────────────────────── */
-function startTimer() {
-  if (STATE.timerHandle) clearInterval(STATE.timerHandle);
-  STATE.timerHandle = setInterval(() => {
-    if (!STATE.running) { clearInterval(STATE.timerHandle); return; }
-    STATE.timeLeft--;
-    updateHUD();
-    if (STATE.timeLeft <= 0) {
-      clearInterval(STATE.timerHandle);
-      endGame();
+  // Ground glow at bottom
+  const grd=ctx.createLinearGradient(0,canvas.height*.7,0,canvas.height);
+  grd.addColorStop(0,'rgba(0,0,0,0)');
+  grd.addColorStop(1,level===1?'rgba(30,80,255,0.18)':'rgba(80,0,80,0.18)');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Lightning flash Level 2
+  if(level===2 && Math.random()<.003){
+    ctx.fillStyle='rgba(255,255,255,0.07)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  // Move & draw orbs
+  orbs.forEach(o=>{
+    if(o.collected)return;
+    // Drift down + gentle side bob
+    o.y += o.speed;
+    o.x += Math.sin(frame*.02+o.phase)*0.4;
+    o.phase+=0.01;
+    // Wrap around bottom
+    if(o.y>canvas.height+o.r){
+      o.y=-o.r; o.x=o.r+20+Math.random()*(canvas.width-o.r*2-40);
     }
-  }, 1000);
+    drawOrb(o);
+  });
+
+  // Gaze check
+  checkGaze();
+
+  requestAnimationFrame(loop);
 }
 
-/* ─────────────────────────────────────────────
-   HUD UPDATE
-───────────────────────────────────────────── */
-function updateHUD() {
-  const scoreEl = document.getElementById('scoreText');
-  const timerEl = document.getElementById('timerText');
-  if (scoreEl) scoreEl.setAttribute('value', `Score: ${STATE.score}`);
-  if (timerEl) {
-    timerEl.setAttribute('value', `Time: ${STATE.timeLeft}`);
-    timerEl.setAttribute('color', STATE.timeLeft <= 10 ? '#ef4444' : '#fbbf24');
+function drawOrb(o){
+  const x=o.x, y=o.y, r=o.r;
+  const pulsed=r*(1+.04*Math.sin(frame*.06+o.phase));
+
+  // Outer glow
+  const glow=ctx.createRadialGradient(x,y,pulsed*.5,x,y,pulsed*2.2);
+  if(o.bad){
+    glow.addColorStop(0,'rgba(239,68,68,0.35)');
+    glow.addColorStop(1,'rgba(239,68,68,0)');
+  } else {
+    glow.addColorStop(0,'rgba(125,249,255,0.35)');
+    glow.addColorStop(1,'rgba(125,249,255,0)');
   }
-}
+  ctx.fillStyle=glow;
+  ctx.beginPath(); ctx.arc(x,y,pulsed*2.2,0,Math.PI*2); ctx.fill();
 
-/* ─────────────────────────────────────────────
-   END GAME
-───────────────────────────────────────────── */
-function endGame() {
-  STATE.running = false;
-  stopBgMusic();
-  clearOrbs();
-
-  document.getElementById('finalScore').textContent = STATE.score;
-
-  const msg = STATE.score >= 100 ? '🌟 Outstanding collector!' :
-              STATE.score >= 50  ? '✨ Well done! Keep it up!' :
-                                   '🌀 Keep practicing — you\'ll get there!';
-  document.getElementById('endMsg').textContent = msg;
-
-  // Show "Next Level" only on Level 1
-  const nextBtn = document.getElementById('nextLevelBtn');
-  nextBtn.style.display = STATE.level === 1 ? 'inline-block' : 'none';
-
-  document.getElementById('vrScene').style.display = 'none';
-  show('endScreen');
-}
-
-/* ─────────────────────────────────────────────
-   A-FRAME BILLBOARD COMPONENT
-   (makes floating text always face camera)
-───────────────────────────────────────────── */
-AFRAME.registerComponent('billboard', {
-  tick: function () {
-    const cam = document.getElementById('playerCamera');
-    if (!cam) return;
-    const camPos = cam.object3D.position;
-    this.el.object3D.lookAt(camPos);
+  // Orb body gradient
+  const body=ctx.createRadialGradient(x-r*.28,y-r*.28,r*.04, x,y,r);
+  if(o.bad){
+    body.addColorStop(0,'#ffffff');
+    body.addColorStop(.18,'#fca5a5');
+    body.addColorStop(.7,'#dc2626');
+    body.addColorStop(1,'#450a0a');
+  } else {
+    body.addColorStop(0,'#ffffff');
+    body.addColorStop(.18,'#7df9ff');
+    body.addColorStop(.7,'#1d4ed8');
+    body.addColorStop(1,'#0c1445');
   }
-});
+  ctx.fillStyle=body;
+  ctx.beginPath(); ctx.arc(x,y,pulsed,0,Math.PI*2); ctx.fill();
 
-/* ─────────────────────────────────────────────
-   SCENE READY — inject procedural textures
-───────────────────────────────────────────── */
-document.getElementById('vrScene').addEventListener('loaded', () => {
-  document.getElementById('orbTexGood').src = makeOrbTexture('#7df9ff', '#3b82f6');
-  document.getElementById('orbTexBad').src  = makeOrbTexture('#fca5a5', '#dc2626');
-});
+  // Specular highlight
+  const hl=ctx.createRadialGradient(x-r*.3,y-r*.3,0, x-r*.2,y-r*.2,r*.38);
+  hl.addColorStop(0,'rgba(255,255,255,0.85)');
+  hl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=hl;
+  ctx.beginPath(); ctx.arc(x-r*.15,y-r*.15,r*.38,0,Math.PI*2); ctx.fill();
 
-/* ─────────────────────────────────────────────
-   PREVENT default touch scroll in VR
-───────────────────────────────────────────── */
-document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  // Ring
+  ctx.strokeStyle=o.bad?'rgba(239,68,68,0.6)':'rgba(125,249,255,0.6)';
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(x,y,pulsed*1.35,0,Math.PI*2); ctx.stroke();
+}
 
+// ─── END GAME ─────────────────────────────
+function endGame(){
+  stopGame();
+  hide('hud');
+  document.getElementById('final-score').textContent=score;
+  document.getElementById('end-msg').textContent=
+    score>=100?'Outstanding collector! You\'re a natural!' :
+    score>=50 ?'Well done! Great orb hunter!' :
+               'Keep practising - you\'ll get there!';
+  document.getElementById('next-btn').style.display=level===1?'inline-block':'none';
+  show('s-end');
+}
+
+// ─── PREVENT SCROLL ON MOBILE ─────────────
+document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 </script>
 </body>
 </html>
