@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sky Orb Collector – Manual</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap');
+    :root {
+      --bg: #060b1a; --surface: #0f172a; --border: rgba(99,102,241,.25);
+      --accent: #6366f1; --cyan: #7df9ff; --purple: #a78bfa;
+      --text: #e2e8f0; --muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; }
+
+    /* Stars */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, #fff8, transparent),
+        radial-gradient(1px 1px at 60% 15%, #fff6, transparent),
+        radial-gradient(1px 1px at 80% 70%, #fff5, transparent),
+        radial-gradient(1px 1px at 10% 85%, #fff4, transparent),
+        radial-gradient(1px 1px at 45% 55%, #fff6, transparent),
+        radial-gradient(1px 1px at 90% 25%, #fff5, transparent);
+      pointer-events: none;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem; position: relative; z-index: 1; }
+
+    /* Header */
+    header { text-align: center; margin-bottom: 3.5rem; }
+    .orb-icon {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff, var(--cyan) 40%, var(--accent) 80%, #000);
+      margin: 0 auto 1.5rem;
+      box-shadow: 0 0 40px #7df9ff44;
+      animation: spin 8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2rem,6vw,3.2rem);
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle { color: var(--muted); margin-top: .4rem; font-size: 1rem; }
+    .badge {
+      display: inline-block; margin-top: 1rem;
+      padding: .3rem 1rem; border-radius: 50px;
+      background: rgba(99,102,241,.15); border: 1px solid var(--border);
+      font-size: .82rem; color: var(--purple);
+    }
+
+    /* Sections */
+    section { margin-bottom: 2.5rem; }
+    h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.2rem; color: var(--cyan);
+      margin-bottom: 1rem; padding-bottom: .4rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .6rem;
+    }
+    h3 { color: var(--purple); margin: 1rem 0 .4rem; font-size: 1rem; }
+
+    p { color: #cbd5e1; margin-bottom: .8rem; }
+
+    /* Cards */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1rem; padding: 1.4rem 1.6rem; margin-bottom: 1rem;
+    }
+    .card p:last-child { margin-bottom: 0; }
+
+    /* Steps */
+    .steps { list-style: none; }
+    .steps li {
+      display: flex; gap: 1rem; align-items: flex-start;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: .8rem; padding: 1rem 1.2rem; margin-bottom: .7rem;
+    }
+    .step-num {
+      flex-shrink: 0; width: 32px; height: 32px;
+      background: linear-gradient(135deg,var(--accent),var(--purple));
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: .85rem;
+    }
+
+    /* Controls table */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem 1rem; border-bottom: 1px solid var(--border); font-size: .95rem; }
+    th { color: var(--cyan); font-weight: 600; background: rgba(99,102,241,.08); }
+    td { color: #cbd5e1; }
+    tr:last-child td { border-bottom: none; }
+
+    /* Level cards */
+    .level-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media(max-width:540px) { .level-grid { grid-template-columns: 1fr; } }
+    .level-card {
+      border: 1px solid var(--border); border-radius: 1rem; padding: 1.2rem;
+      background: var(--surface);
+    }
+    .level-card.easy { border-color: #3b82f644; }
+    .level-card.hard { border-color: #ef444444; }
+    .level-card h3 { margin-top: 0; }
+    .level-card.easy h3 { color: var(--cyan); }
+    .level-card.hard h3 { color: #f87171; }
+    ul.dot { list-style: disc; padding-left: 1.2rem; color: #94a3b8; font-size: .9rem; }
+    ul.dot li { margin-bottom: .3rem; }
+
+    /* Score chip */
+    .chip {
+      display: inline-block; padding: .15rem .7rem; border-radius: 50px;
+      font-size: .82rem; font-weight: 600; margin-left: .5rem;
+    }
+    .chip.green { background: #052e16; color: #6ee7b7; border: 1px solid #065f46; }
+    .chip.red   { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+
+    /* Requirements checklist */
+    .req-list { list-style: none; }
+    .req-list li {
+      padding: .5rem .8rem; display: flex; align-items: center; gap: .7rem;
+      border-bottom: 1px solid rgba(255,255,255,.04); font-size: .93rem; color: #cbd5e1;
+    }
+    .req-list li:last-child { border-bottom: none; }
+    .req-list .check { color: #4ade80; font-size: 1.1rem; }
+    .req-list .pts { margin-left: auto; color: var(--muted); font-size: .82rem; }
+
+    footer {
+      text-align: center; margin-top: 4rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="orb-icon"></div>
+    <h1>Sky Orb Collector</h1>
+    <p class="subtitle">Mobile VR Game · A-Frame WebVR</p>
+    <span class="badge">CMPT 461 – Immersive Computing · Trinity Western University</span><br>
+    <span class="badge" style="margin-top:.5rem;">Author: Gnana Deepika</span>
+  </header>
+
+  <!-- OVERVIEW -->
+  <section>
+    <h2>🎮 Game Overview</h2>
+    <div class="card">
+      <p><strong>Sky Orb Collector</strong> is a gaze-based mobile VR game built with A-Frame. The player stands in the centre of a floating sky world and collects glowing orbs by simply <em>looking at them</em>. No hands, no controller — only your gaze.</p>
+      <p>Collect as many green orbs as possible before the 60-second timer runs out. In Level 2, beware red "bad orbs" that deduct points!</p>
+    </div>
+  </section>
+
+  <!-- INSTALLATION -->
+  <section>
+    <h2>📦 Installation &amp; Setup</h2>
+    <p>No build tools or server required. The game runs in any modern browser.</p>
+    <ol class="steps">
+      <li><span class="step-num">1</span><div><strong>Download the file</strong> — obtain <code>index.html</code> from the repository or zip package.</div></li>
+      <li><span class="step-num">2</span><div><strong>Open in a browser</strong> — double-click <code>index.html</code> or serve it locally with any static server (e.g., VS Code Live Server, Python's <code>http.server</code>).</div></li>
+      <li><span class="step-num">3</span><div><strong>Allow motion &amp; orientation</strong> — on iOS, go to <em>Settings → Safari → Motion &amp; Orientation Access</em> and enable it. On Android, allow sensor access when prompted.</div></li>
+      <li><span class="step-num">4</span><div><strong>VR mode</strong> — click the VR headset icon (bottom-right corner of the A-Frame scene) to enter stereoscopic split-screen. Insert your phone into a Google Cardboard viewer.</div></li>
+    </ol>
+
+    <h3>Recommended Browsers</h3>
+    <table>
+      <tr><th>Platform</th><th>Browser</th><th>Notes</th></tr>
+      <tr><td>Desktop</td><td>Chrome / Edge / Firefox</td><td>Mouse-look to aim cursor</td></tr>
+      <tr><td>Android</td><td>Chrome</td><td>Gyroscope head-tracking</td></tr>
+      <tr><td>iOS</td><td>Safari</td><td>Enable motion access in Settings first</td></tr>
+    </table>
+  </section>
+
+  <!-- CONTROLS -->
+  <section>
+    <h2>🕹 Controls</h2>
+    <div class="card">
+      <p>The game uses <strong>gaze-based fuse control</strong> — no hands or touch required.</p>
+    </div>
+    <table>
+      <tr><th>Action</th><th>How to do it</th></tr>
+      <tr><td>Aim at an orb</td><td>Move your head / phone / mouse to point the crosshair at the orb</td></tr>
+      <tr><td>Collect an orb</td><td>Hold your gaze on the orb for <strong>~1.5 seconds</strong> — the cursor fills and triggers automatically</td></tr>
+      <tr><td>Navigate menus</td><td>Tap buttons on-screen (desktop: mouse click)</td></tr>
+      <tr><td>Enter VR mode</td><td>Tap the 🥽 icon (bottom-right of the scene)</td></tr>
+    </table>
+  </section>
+
+  <!-- LEVELS -->
+  <section>
+    <h2>🌐 Levels</h2>
+    <div class="level-grid">
+      <div class="level-card easy">
+        <h3>🌤 Level 1 – Easy</h3>
+        <ul class="dot">
+          <li>Bright blue sky environment</li>
+          <li>Slow-floating green orbs</li>
+          <li>Only good orbs (no penalties)</li>
+          <li>Good orb: <span class="chip green">+10 pts</span></li>
+          <li>60-second timer</li>
+        </ul>
+      </div>
+      <div class="level-card hard">
+        <h3>⛈ Level 2 – Hard</h3>
+        <ul class="dot">
+          <li>Dark stormy sky with lightning flashes</li>
+          <li>Faster-moving orbs</li>
+          <li>Red "bad orbs" mixed in</li>
+          <li>Good orb: <span class="chip green">+10 pts</span></li>
+          <li>Bad orb: <span class="chip red">−5 pts</span></li>
+          <li>60-second timer</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP OPTIONS -->
+  <section>
+    <h2>⚙ Setup Options</h2>
+    <table>
+      <tr><th>Option</th><th>Description</th></tr>
+      <tr><td>Background Music</td><td>Toggle the ambient music loop ON or OFF before starting</td></tr>
+      <tr><td>Level Selection</td><td>Choose Level 1 (Easy) or Level 2 (Hard)</td></tr>
+    </table>
+  </section>
+
+  <!-- SCORING -->
+  <section>
+    <h2>🏆 Scoring</h2>
+    <div class="card">
+      <ul class="dot" style="font-size:1rem;">
+        <li>Each green orb collected: <span class="chip green">+10 points</span></li>
+        <li>Each red (bad) orb gazed at: <span class="chip red">−5 points</span></li>
+        <li>Score cannot go below <strong>0</strong></li>
+        <li>The scoreboard is always visible in the top HUD</li>
+        <li>Score &gt; 100 = Outstanding · Score &gt; 50 = Well Done</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- FEATURES / CHECKLIST -->
+  <section>
+    <h2>✅ Feature Checklist (Marking Scheme)</h2>
+    <div class="card" style="padding:0;">
+      <ul class="req-list">
+        <li><span class="check">✔</span> Unique game idea – floating sky orb collector<span class="pts">5 pts</span></li>
+        <li><span class="check">✔</span> Manual (this page)<span class="pts">5 pts</span></li>
+        <li><span class="check">✔</span> Flash screen with name &amp; credentials<span class="pts">10 pts</span></li>
+        <li><span class="check">✔</span> Setup option (music toggle, level select)<span class="pts">10 pts</span></li>
+        <li><span class="check">✔</span> Two levels (Easy sky / Hard storm)<span class="pts">10 pts</span></li>
+        <li><span class="check">✔</span> Sound effects (collect ding, wrong buzz) &amp; background music<span class="pts">10 pts</span></li>
+        <li><span class="check">✔</span> Scoreboard always visible in HUD<span class="pts">10 pts</span></li>
+        <li><span class="check">✔</span> Gaze-based fuse control (no hands)<span class="pts">10 pts</span></li>
+        <li><span class="check">✔</span> Stereoscopic VR via A-Frame VR mode button<span class="pts">5 pts</span></li>
+        <li><span class="check">✔</span> Orbs with procedural gradient/gloss textures<span class="pts">10 pts</span></li>
+        <li><span class="check">✔</span> Collision via raycaster + fuse cursor<span class="pts">5 pts</span></li>
+        <li><span class="check">✔</span> Extra: floating animations, glow rings, lightning, floating score text, end screen<span class="pts">10 pts</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- TECH NOTES -->
+  <section>
+    <h2>🔧 Technical Notes</h2>
+    <div class="card">
+      <h3>Gaze Cursor</h3>
+      <p>Uses A-Frame's built-in <code>&lt;a-cursor fuse="true" fuse-timeout="1500"&gt;</code> with a raycaster targeting <code>.collectible</code> objects. After 1.5 s of continuous gaze, a <code>click</code> event fires automatically.</p>
+      <h3>Textures</h3>
+      <p>All textures are procedurally generated at runtime using the HTML Canvas API — no external image files needed. Radial gradients simulate a glossy sphere surface with specular highlights.</p>
+      <h3>Audio</h3>
+      <p>Sounds are synthesised with the Web Audio API oscillator nodes — no audio file downloads required. A looping tone sequence plays as background music.</p>
+      <h3>Stereoscopic VR</h3>
+      <p>A-Frame's built-in VR mode splits the view automatically when the headset icon is tapped and a VR headset (or Google Cardboard) is connected.</p>
+      <h3>Single-File Architecture</h3>
+      <p>The entire game — HTML, CSS, JavaScript, A-Frame scene, procedural textures, and audio — lives in a single <code>index.html</code> file for maximum portability.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Sky Orb Collector &nbsp;·&nbsp; Gnana Deepika &nbsp;·&nbsp; CMPT 461 Immersive Computing &nbsp;·&nbsp; Trinity Western University &nbsp;·&nbsp; 2026</p>
+    <p style="margin-top:.4rem;">Built with <a href="https://aframe.io" style="color:var(--accent);">A-Frame</a> WebVR Framework</p>
+  </footer>
+
+</div>
+</body>
+</html>
