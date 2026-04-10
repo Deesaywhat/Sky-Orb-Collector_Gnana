@@ -1,6 +1,7 @@
 # Sky-Orb-Collector_Gnana
-This is the prompt I gave an AI engine as per the assignment requirements:
-#You are an expert web developer specializing in A-Frame and WebVR. I need you to build a complete, clean, and fully functional mobile VR game using A-Frame that works on desktop, mobile phones, and Google Cardboard-style VR.
+**This is the prompt I gave an AI engine as per the assignment requirements:**
+
+You are an expert web developer specializing in A-Frame and WebVR. I need you to build a complete, clean, and fully functional mobile VR game using A-Frame that works on desktop, mobile phones, and Google Cardboard-style VR.
 
 Game Title: "Sky Orb Collector"
 Game Concept:
