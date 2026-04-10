@@ -4,137 +4,208 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sky Orb Collector – Manual</title>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap');
+
     :root {
-      --bg: #060b1a; --surface: #0f172a; --border: rgba(99,102,241,.25);
-      --accent: #6366f1; --cyan: #7df9ff; --purple: #a78bfa;
-      --text: #e2e8f0; --muted: #64748b;
+      --bg: #060b1a;
+      --surface: #0f172a;
+      --border: rgba(99,102,241,.25);
+      --accent: #6366f1;
+      --cyan: #7df9ff;
+      --purple: #a78bfa;
+      --text: #e2e8f0;
+      --muted: #64748b;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.7;
+    }
 
     body::before {
       content: '';
-      position: fixed; inset: 0; z-index: 0;
+      position: fixed;
+      inset: 0;
       background-image:
         radial-gradient(1px 1px at 20% 30%, #fff8, transparent),
         radial-gradient(1px 1px at 60% 15%, #fff6, transparent),
-        radial-gradient(1px 1px at 80% 70%, #fff5, transparent),
-        radial-gradient(1px 1px at 10% 85%, #fff4, transparent);
+        radial-gradient(1px 1px at 80% 70%, #fff5, transparent);
       pointer-events: none;
     }
 
-    .container { max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem; position: relative; z-index: 1; }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
 
-    header { text-align: center; margin-bottom: 3.5rem; }
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
     .orb-icon {
-      width: 80px; height: 80px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #fff, var(--cyan) 40%, var(--accent) 80%, #000);
-      margin: 0 auto 1.5rem;
-      box-shadow: 0 0 40px #7df9ff44;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff, var(--cyan));
+      margin: 0 auto 1rem;
       animation: spin 8s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
     h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(2rem,6vw,3.2rem);
-      background: linear-gradient(135deg, var(--cyan), var(--purple));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-family: 'Orbitron';
+      font-size: 2.5rem;
+      color: var(--cyan);
     }
 
-    .subtitle { color: var(--muted); margin-top: .4rem; }
+    .subtitle {
+      color: var(--muted);
+    }
+
     .badge {
-      display: inline-block; margin-top: 1rem;
-      padding: .3rem 1rem; border-radius: 50px;
-      background: rgba(99,102,241,.15); border: 1px solid var(--border);
-      font-size: .82rem; color: var(--purple);
+      display: inline-block;
+      margin-top: 1rem;
+      padding: .3rem 1rem;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      color: var(--purple);
     }
 
-    section { margin-bottom: 2.5rem; }
+    section { margin-bottom: 2rem; }
+
     h2 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.2rem; color: var(--cyan);
-      margin-bottom: 1rem; border-bottom: 1px solid var(--border);
+      color: var(--cyan);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
     }
 
     .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 1rem; padding: 1.4rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.2rem;
+      border-radius: 1rem;
     }
 
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: .7rem; border-bottom: 1px solid var(--border); }
+    .steps { list-style: none; }
+    .steps li {
+      margin-bottom: .8rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: .6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    ul.dot {
+      padding-left: 1.2rem;
+    }
 
     .chip {
-      display: inline-block;
-      padding: .15rem .7rem;
-      border-radius: 50px;
-      font-size: .82rem;
-      font-weight: 600;
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      font-size: .8rem;
     }
-    .green { background: #052e16; color: #6ee7b7; }
-    .red   { background: #450a0a; color: #fca5a5; }
 
-    ul.dot { list-style: disc; padding-left: 1.2rem; }
+    .green { background: #052e16; color: #6ee7b7; }
+    .red { background: #450a0a; color: #fca5a5; }
 
     footer {
-      text-align: center; margin-top: 4rem;
-      border-top: 1px solid var(--border);
-      color: var(--muted); font-size: .85rem;
-      padding-top: 1rem;
+      text-align: center;
+      margin-top: 2rem;
+      color: var(--muted);
     }
   </style>
 </head>
 
 <body>
+
 <div class="container">
 
 <header>
   <div class="orb-icon"></div>
   <h1>Sky Orb Collector</h1>
   <p class="subtitle">Mobile VR Game · A-Frame WebVR</p>
-  <span class="badge">CMPT 461 – Immersive Computing · Trinity Western University</span><br>
-  <span class="badge" style="margin-top:.5rem;">Author: Gnana Damarla</span>
+  <span class="badge">CMPT 461 – Immersive Computing</span><br>
+  <span class="badge">Author: Gnana Damarla</span>
 </header>
 
+<!-- GAME OVERVIEW -->
 <section>
   <h2>🎮 Game Overview</h2>
   <div class="card">
-    <p><strong>Sky Orb Collector</strong> is a gaze-based mobile VR game where you collect glowing orbs by looking at them.</p>
+    <p><strong>Sky Orb Collector</strong> is a gaze-based mobile VR game built with A-Frame. The player stands in the centre of a floating sky world and collects glowing orbs by simply looking at them. No hands, no controller — only your gaze.</p>
+    <p>Collect as many green orbs as possible before the 60-second timer runs out. In Level 2, beware red "bad orbs" that deduct points!</p>
   </div>
 </section>
 
+<!-- INSTALLATION -->
 <section>
-  <h2>🕹 Controls</h2>
-  <table>
-    <tr><th>Action</th><th>How to do it</th></tr>
-    <tr><td>Aim at an orb</td><td>Move your mouse / head</td></tr>
-    <tr><td>Collect an orb</td><td>Hold gaze for ~1.5 seconds</td></tr>
-  </table>
+  <h2>📦 Installation & Setup</h2>
+  <div class="card">
+    <p>No build tools or server required. The game runs in any modern browser.</p>
+
+    <ol class="steps">
+      <li><strong>1.</strong> Download the file — obtain <code>index.html</code></li>
+      <li><strong>2.</strong> Open in browser — double-click or use Live Server</li>
+      <li><strong>3.</strong> Allow motion access on mobile devices</li>
+      <li><strong>4.</strong> Click VR icon and insert into Cardboard</li>
+    </ol>
+
+    <h3>Recommended Browsers</h3>
+    <table>
+      <tr><th>Platform</th><th>Browser</th><th>Notes</th></tr>
+      <tr><td>Desktop</td><td>Chrome / Edge / Firefox</td><td>Mouse aim</td></tr>
+      <tr><td>Android</td><td>Chrome</td><td>Head tracking</td></tr>
+      <tr><td>iOS</td><td>Safari</td><td>Enable motion access</td></tr>
+    </table>
+  </div>
 </section>
 
-<!-- ✅ HOW TO PLAY SECTION -->
+<!-- CONTROLS -->
+<section>
+  <h2>🕹 Controls</h2>
+  <div class="card">
+    <p>Use your gaze to interact — no buttons needed.</p>
+  </div>
+</section>
+
+<!-- HOW TO PLAY -->
 <section>
   <h2>🎯 How to Play</h2>
   <div class="card">
-    <ul class="dot" style="font-size:1rem;">
+    <ul class="dot">
       <li>Move your mouse (or head in VR) to aim the glowing ring cursor at orbs</li>
-      <li>Keep the cursor focused on an orb for about <strong>1.5 seconds</strong> — the ring fills and collects it automatically</li>
+      <li>Focus on an orb for about <strong>1.5 seconds</strong> to collect it</li>
       <li><strong>Cyan/blue orbs</strong>: <span class="chip green">+10 points</span></li>
       <li><strong>Red orbs</strong>: <span class="chip red">−5 points</span></li>
-      <li>Each round lasts <strong>60 seconds</strong> — try to score as high as possible before time runs out!</li>
+      <li>You have <strong>60 seconds</strong> — score as high as possible!</li>
     </ul>
   </div>
 </section>
 
+<!-- SCORING -->
 <section>
   <h2>🏆 Scoring</h2>
   <div class="card">
     <ul class="dot">
-      <li>Green orb: <span class="chip green">+10</span></li>
-      <li>Red orb: <span class="chip red">−5</span></li>
+      <li>Green orb = +10</li>
+      <li>Red orb = −5</li>
     </ul>
   </div>
 </section>
@@ -144,5 +215,6 @@
 </footer>
 
 </div>
+
 </body>
 </html>
