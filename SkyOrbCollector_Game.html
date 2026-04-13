@@ -208,100 +208,376 @@
 <script>
 'use strict';
 
-// CONFIG
-const FUSE_MS    = 300;   // gaze time (same for both levels)
-const LEVEL_TIME = 60;
+// ─── CONFIG ───────────────────────────────
+const FUSE_MS    = 300;   // ms to gaze before collecting
+const LEVEL_TIME = 60;     // seconds per level
 const GOOD_PTS   = 10;
 const BAD_PTS    = 5;
 
-// ORB CREATION
+// ─── STATE ────────────────────────────────
+let level=1, score=0, timeLeft=LEVEL_TIME;
+let running=false, musicOn=true;
+let timerInterval=null, spawnTimeout=null;
+let orbs=[];          // active orb objects
+let gazeTarget=null;  // orb currently being gazed at
+let gazeStart=0;      // timestamp gaze began
+let mx=window.innerWidth/2, my=window.innerHeight/2; // mouse pos
+
+// ─── CANVAS SETUP ─────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+function resize(){
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', ()=>{ resize(); buildStars(); });
+resize();
+
+// ─── CROSSHAIR follows mouse ──────────────
+const crosshair = document.getElementById('crosshair');
+document.addEventListener('mousemove', e=>{
+  mx = e.clientX; my = e.clientY;
+  crosshair.style.left = mx+'px';
+  crosshair.style.top  = my+'px';
+});
+// Centre crosshair initially
+crosshair.style.left = mx+'px';
+crosshair.style.top  = my+'px';
+
+// ─── STARS (background) ───────────────────
+let stars=[];
+function buildStars(){
+  stars=[];
+  for(let i=0;i<180;i++){
+    stars.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      r:Math.random()*1.4+.3,
+      a:Math.random()
+    });
+  }
+}
+buildStars();
+
+// ─── AUDIO (Web Audio, no files needed) ───
+let audioCtx=null;
+function ac(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+function beep(freq,type,dur,vol){
+  vol=vol||0.25;
+  try{
+    const c=ac(), o=c.createOscillator(), g=c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sndCollect(){ beep(523,'sine',.1); setTimeout(()=>beep(659,'sine',.1),65); setTimeout(()=>beep(784,'sine',.2),130); }
+function sndWrong()  { beep(260,'sawtooth',.08,.2); setTimeout(()=>beep(160,'sawtooth',.13,.2),70); }
+
+let bgMusicTimer=null, bgIdx=0;
+const BG=[261,293,329,349,392,440,493,523];
+function startMusic(){ if(!musicOn||bgMusicTimer)return; bgMusicTimer=setInterval(()=>{ if(musicOn)beep(BG[bgIdx++%BG.length],'triangle',.36,.055); },480); }
+function stopMusic() { clearInterval(bgMusicTimer); bgMusicTimer=null; }
+
+// ─── NAV HELPERS ──────────────────────────
+function show(id){ document.getElementById(id).classList.remove('hidden'); }
+function hide(id){ document.getElementById(id).classList.add('hidden'); }
+
+function goFlash(){
+  hide('s-setup'); hide('s-end'); show('s-flash');
+  hide('hud'); stopGame();
+}
+function goSetup(){
+  hide('s-flash'); hide('s-end'); show('s-setup');
+  hide('hud'); stopGame();
+}
+
+let chosenLevel=1;
+function pickLevel(l){
+  chosenLevel=l;
+  document.getElementById('lb1').className='lvl-btn'+(l===1?' on':'');
+  document.getElementById('lb2').className='lvl-btn'+(l===2?' on':'');
+}
+
+// ─── LAUNCH GAME ──────────────────────────
+function launchGame(){
+  musicOn = document.getElementById('music-chk').checked;
+  level   = chosenLevel;
+  startRound();
+}
+function replayGame(){ hide('s-end'); startRound(); }
+function nextLevel() { chosenLevel=2; level=2; hide('s-end'); startRound(); }
+
+function startRound(){
+  score=0; timeLeft=LEVEL_TIME; running=true;
+  orbs=[]; gazeTarget=null;
+  hide('s-flash'); hide('s-setup'); hide('s-end');
+  show('hud');
+  updateHUD();
+  stopGame();    // clear old intervals
+  running=true;
+  startTimer();
+  scheduleSpawn();
+  startMusic();
+  requestAnimationFrame(loop);
+}
+
+function stopGame(){
+  running=false;
+  clearInterval(timerInterval); timerInterval=null;
+  clearTimeout(spawnTimeout);   spawnTimeout=null;
+  stopMusic();
+  orbs=[];
+  gazeTarget=null;
+}
+
+// ─── TIMER ────────────────────────────────
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(!running)return;
+    timeLeft--;
+    updateHUD();
+    if(timeLeft<=0){ clearInterval(timerInterval); endGame(); }
+  },1000);
+}
+
+// ─── HUD ──────────────────────────────────
+function updateHUD(){
+  document.getElementById('hud-score').textContent = 'Score: '+score;
+  document.getElementById('hud-level').textContent = 'Level '+level;
+  const t=document.getElementById('hud-timer');
+  t.textContent='Time: '+timeLeft;
+  t.style.color=timeLeft<=10?'#ef4444':'#fbbf24';
+}
+
+// ─── ORB DEFINITIONS ──────────────────────
+// Each orb: {x,y,vy,r,bad,phase,speed,alpha}
 function makeOrb(){
-  // More red orbs in level 2
-  const bad = level === 2 && Math.random() < 0.6;
-
-  // Size
-  const r = bad ? (35 + Math.random()*20) : (28 + Math.random()*18);
-
-  const margin = r + 20;
-  const x = margin + Math.random() * (canvas.width - margin * 2);
-  const y = -r - Math.random() * 200;
-
-  // Speed
+  const bad   = level===2 && Math.random()<0.6;
+  const r     = 28 + Math.random()*18;
+  const margin= r+20;
+  const x     = margin + Math.random()*(canvas.width -margin*2);
+  // Start from top, drift downward
+  const y     = -r - Math.random()*200;
   let speed;
 
-  if (level === 1) {
-    speed = 0.4 + Math.random() * 0.5;
+if (level === 1) {
+  speed = 0.4 + Math.random() * 0.5; // normal
+} else {
+  if (bad) {
+    // RED orbs → faster
+    speed = 1.5 + Math.random() * 1.5;
   } else {
-    if (bad) {
-      speed = 2.0 + Math.random() * 2.0; // red orbs faster
-    } else {
-      speed = 1.2 + Math.random() * 1.2; // blue orbs
-    }
+    // BLUE orbs → slower
+    speed = 0.6 + Math.random() * 0.6;
   }
-
+}
   return { x, y, r, bad, speed, phase:Math.random()*Math.PI*2, alpha:1, collected:false };
 }
 
-// SPAWN SYSTEM
 function scheduleSpawn(){
-  if(!running) return;
-
-  const delay = level === 1 ? 900 : 300; // faster in level 2
-
-  spawnTimeout = setTimeout(()=>{
-    if(!running) return;
-
-    const target = level === 1 ? 5 : 11; // more orbs in level 2
-
-    while(orbs.length < target) {
-      orbs.push(makeOrb());
-    }
-
+  if(!running)return;
+  const delay = level===1 ? 900 : 600;
+  spawnTimeout=setTimeout(()=>{
+    if(!running)return;
+    // Keep between 5-9 orbs on screen
+    const target = level===1?5:9;
+    while(orbs.length<target) orbs.push(makeOrb());
     scheduleSpawn();
   }, delay);
 }
 
-// GAZE DETECTION
+// ─── GAZE DETECTION ───────────────────────
+const gazeRing  = document.getElementById('gaze-ring');
+const gazeWrap  = document.getElementById('gaze-bar-wrap');
+const gazeBar   = document.getElementById('gaze-bar');
+const CIRC      = 2*Math.PI*14; // circumference of crosshair ring (r=14)
+
 function checkGaze(){
-  let hit = null;
-
-  for(let i = orbs.length - 1; i >= 0; i--){
-    const o = orbs[i];
-    if(o.collected) continue;
-
-    const dx = mx - o.x;
-    const dy = my - o.y;
-
-    if(Math.sqrt(dx*dx + dy*dy) < o.r){
-      hit = o;
-      break;
-    }
+  let hit=null;
+  // Find topmost orb under cursor (reverse so latest spawned on top)
+  for(let i=orbs.length-1;i>=0;i--){
+    const o=orbs[i];
+    if(o.collected)continue;
+    const dx=mx-o.x, dy=my-o.y;
+    if(Math.sqrt(dx*dx+dy*dy)<o.r){ hit=o; break; }
   }
 
-  if(hit !== gazeTarget){
-    gazeTarget = hit;
-    gazeStart = performance.now();
+  if(hit!==gazeTarget){
+    gazeTarget=hit;
+    gazeStart=performance.now();
   }
 
   if(gazeTarget){
-    const elapsed = performance.now() - gazeStart;
-    const pct = Math.min(elapsed / FUSE_MS, 1);
-
-    gazeRing.setAttribute('stroke-dasharray', (pct * CIRC) + ' ' + (CIRC * (1 - pct)));
-
-    gazeWrap.style.opacity = '1';
-    gazeBar.style.width = (pct * 100) + '%';
-
-    if(pct >= 1){
-      collectOrb(gazeTarget);
-      gazeTarget = null;
-    }
+    const elapsed=performance.now()-gazeStart;
+    const pct=Math.min(elapsed/FUSE_MS,1);
+    // Animate crosshair ring
+    gazeRing.setAttribute('stroke-dasharray', (pct*CIRC)+' '+(CIRC*(1-pct)));
+    // Gaze bar
+    gazeWrap.style.opacity='1';
+    gazeBar.style.width=(pct*100)+'%';
+    if(pct>=1){ collectOrb(gazeTarget); gazeTarget=null; }
   } else {
-    gazeRing.setAttribute('stroke-dasharray','0 ' + CIRC);
-    gazeWrap.style.opacity = '0';
-    gazeBar.style.width = '0%';
+    gazeRing.setAttribute('stroke-dasharray','0 '+CIRC);
+    gazeWrap.style.opacity='0';
+    gazeBar.style.width='0%';
   }
 }
+
+// ─── COLLECT ──────────────────────────────
+function collectOrb(orb){
+  if(orb.collected)return;
+  orb.collected=true;
+  if(orb.bad){
+    score=Math.max(0,score-BAD_PTS);
+    sndWrong();
+    popText('-5','#ef4444',orb.x,orb.y);
+  } else {
+    score+=GOOD_PTS;
+    sndCollect();
+    popText('+10','#7df9ff',orb.x,orb.y);
+  }
+  updateHUD();
+  // Remove after short burst
+  setTimeout(()=>{ orbs=orbs.filter(o=>o!==orb); },300);
+}
+
+// ─── FLOATING TEXT POP ────────────────────
+function popText(txt,color,x,y){
+  const el=document.createElement('div');
+  el.className='pop';
+  el.textContent=txt;
+  el.style.color=color;
+  el.style.left=x+'px';
+  el.style.top=y+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
+
+// ─── DRAW ─────────────────────────────────
+let frame=0;
+function loop(){
+  if(!running)return;
+  frame++;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Sky gradient
+  const sky=ctx.createLinearGradient(0,0,0,canvas.height);
+  if(level===1){
+    sky.addColorStop(0,'#0c2461'); sky.addColorStop(1,'#1e90ff');
+  } else {
+    sky.addColorStop(0,'#0d0d0d'); sky.addColorStop(1,'#1a1a2e');
+  }
+  ctx.fillStyle=sky; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Stars
+  stars.forEach(s=>{
+    ctx.globalAlpha=s.a*(.5+.5*Math.sin(frame*.02+s.x));
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Ground glow at bottom
+  const grd=ctx.createLinearGradient(0,canvas.height*.7,0,canvas.height);
+  grd.addColorStop(0,'rgba(0,0,0,0)');
+  grd.addColorStop(1,level===1?'rgba(30,80,255,0.18)':'rgba(80,0,80,0.18)');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Lightning flash Level 2
+  if(level===2 && Math.random()<.003){
+    ctx.fillStyle='rgba(255,255,255,0.07)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  // Move & draw orbs
+  orbs.forEach(o=>{
+    if(o.collected)return;
+    // Drift down + gentle side bob
+    o.y += o.speed;
+    o.x += Math.sin(frame*.02+o.phase)*0.4;
+    o.phase+=0.01;
+    // Wrap around bottom
+    if(o.y>canvas.height+o.r){
+      o.y=-o.r; o.x=o.r+20+Math.random()*(canvas.width-o.r*2-40);
+    }
+    drawOrb(o);
+  });
+
+  // Gaze check
+  checkGaze();
+
+  requestAnimationFrame(loop);
+}
+
+function drawOrb(o){
+  const x=o.x, y=o.y, r=o.r;
+  const pulsed=r*(1+.04*Math.sin(frame*.06+o.phase));
+
+  // Outer glow
+  const glow=ctx.createRadialGradient(x,y,pulsed*.5,x,y,pulsed*2.2);
+  if(o.bad){
+    glow.addColorStop(0,'rgba(239,68,68,0.35)');
+    glow.addColorStop(1,'rgba(239,68,68,0)');
+  } else {
+    glow.addColorStop(0,'rgba(125,249,255,0.35)');
+    glow.addColorStop(1,'rgba(125,249,255,0)');
+  }
+  ctx.fillStyle=glow;
+  ctx.beginPath(); ctx.arc(x,y,pulsed*2.2,0,Math.PI*2); ctx.fill();
+
+  // Orb body gradient
+  const body=ctx.createRadialGradient(x-r*.28,y-r*.28,r*.04, x,y,r);
+  if(o.bad){
+    body.addColorStop(0,'#ffffff');
+    body.addColorStop(.18,'#fca5a5');
+    body.addColorStop(.7,'#dc2626');
+    body.addColorStop(1,'#450a0a');
+  } else {
+    body.addColorStop(0,'#ffffff');
+    body.addColorStop(.18,'#7df9ff');
+    body.addColorStop(.7,'#1d4ed8');
+    body.addColorStop(1,'#0c1445');
+  }
+  ctx.fillStyle=body;
+  ctx.beginPath(); ctx.arc(x,y,pulsed,0,Math.PI*2); ctx.fill();
+
+  // Specular highlight
+  const hl=ctx.createRadialGradient(x-r*.3,y-r*.3,0, x-r*.2,y-r*.2,r*.38);
+  hl.addColorStop(0,'rgba(255,255,255,0.85)');
+  hl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=hl;
+  ctx.beginPath(); ctx.arc(x-r*.15,y-r*.15,r*.38,0,Math.PI*2); ctx.fill();
+
+  // Ring
+  ctx.strokeStyle=o.bad?'rgba(239,68,68,0.6)':'rgba(125,249,255,0.6)';
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(x,y,pulsed*1.35,0,Math.PI*2); ctx.stroke();
+}
+
+// ─── END GAME ─────────────────────────────
+function endGame(){
+  stopGame();
+  hide('hud');
+  document.getElementById('final-score').textContent=score;
+  document.getElementById('end-msg').textContent=
+    score>=100?'Outstanding collector! You\'re a natural!' :
+    score>=50 ?'Well done! Great orb hunter!' :
+               'Keep practising - you\'ll get there!';
+  document.getElementById('next-btn').style.display=level===1?'inline-block':'none';
+  show('s-end');
+}
+
+// ─── PREVENT SCROLL ON MOBILE ─────────────
+document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 </script>
 </body>
 </html>
