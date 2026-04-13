@@ -1,130 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sky Orb Collector</title>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#000; font-family:'Segoe UI',sans-serif; overflow:hidden; }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sky Orb Collector – A-Frame VR</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; overflow:hidden; }
 
-  /* ── SCREENS ── */
-  .screen {
-    position:fixed; inset:0; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; z-index:100;
-  }
-  .hidden { display:none !important; }
+    /* ── SCREENS ── */
+    .screen {
+      position:fixed; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; z-index:9999;
+    }
+    .hidden { display:none !important; }
 
-  /* FLASH */
-  #s-flash { background:radial-gradient(ellipse at 50% 40%, #0a1540, #000); }
-  #s-flash h1 {
-    font-size:clamp(2.5rem,8vw,5rem); font-weight:900; text-align:center;
-    background:linear-gradient(135deg,#7df9ff,#a78bfa,#f0abfc);
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    line-height:1.1; animation:glow 2.5s ease-in-out infinite;
-  }
-  @keyframes glow{ 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.4)} }
-  #s-flash p { color:#a5b4fc; margin:.6rem 0 .2rem; letter-spacing:.2em; text-transform:uppercase; font-size:1rem; }
-  #s-flash .author { color:#c4b5fd; margin:.3rem 0 1.5rem; font-size:.95rem; }
-  #s-flash .author span { color:#f0abfc; font-weight:700; }
-  .orb-demo {
-    width:100px; height:100px; border-radius:50%; margin:1.2rem auto;
-    background:radial-gradient(circle at 35% 32%, #fff, #7df9ff 30%, #3b82f6 65%, #1e1b4b);
-    box-shadow:0 0 40px #7df9ff99; animation:bob 2.5s ease-in-out infinite;
-  }
-  @keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+    /* FLASH */
+    #s-flash { background:radial-gradient(ellipse at 50% 40%, #0a1540, #000); }
+    #s-flash h1 {
+      font-size:clamp(2.5rem,8vw,5rem); font-weight:900; text-align:center;
+      background:linear-gradient(135deg,#7df9ff,#a78bfa,#f0abfc);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text; line-height:1.1; animation:glow 2.5s ease-in-out infinite;
+    }
+    @keyframes glow{ 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.4)} }
+    #s-flash p { color:#a5b4fc; margin:.6rem 0 .2rem; letter-spacing:.2em;
+      text-transform:uppercase; font-size:1rem; }
+    #s-flash .author { color:#c4b5fd; margin:.3rem 0 1.5rem; font-size:.95rem; }
+    #s-flash .author span { color:#f0abfc; font-weight:700; }
+    .orb-demo {
+      width:100px; height:100px; border-radius:50%; margin:1.2rem auto;
+      background:radial-gradient(circle at 35% 32%, #fff, #7df9ff 30%, #3b82f6 65%, #1e1b4b);
+      box-shadow:0 0 40px #7df9ff99; animation:bob 2.5s ease-in-out infinite;
+    }
+    @keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
 
-  /* SETUP */
-  #s-setup { background:radial-gradient(ellipse at 50% 30%, #0f172a, #000); }
-  .box {
-    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.15);
-    border-radius:1.4rem; padding:2.2rem 2.8rem; text-align:center;
-    color:#fff; width:min(420px,92vw);
-  }
-  .box h2 { font-size:1.7rem; font-weight:800; margin-bottom:1.6rem;
-    background:linear-gradient(135deg,#7df9ff,#a78bfa);
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-  .row { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.3rem; }
-  .row label { color:#c4b5fd; font-size:.97rem; }
-  .toggle { position:relative; width:52px; height:27px; cursor:pointer; }
-  .toggle input { opacity:0; width:0; height:0; }
-  .knob {
-    position:absolute; inset:0; background:#334155; border-radius:27px; transition:background .3s;
-  }
-  .knob::before {
-    content:''; position:absolute; top:3px; left:3px;
-    width:21px; height:21px; background:#fff; border-radius:50%; transition:transform .3s;
-  }
-  .toggle input:checked ~ .knob { background:#6366f1; }
-  .toggle input:checked ~ .knob::before { transform:translateX(25px); }
-  .lvl-row { display:flex; gap:.8rem; justify-content:center; margin-bottom:1.5rem; }
-  .lvl-btn {
-    padding:.6rem 1.5rem; border:2px solid #6366f1; border-radius:50px;
-    background:transparent; color:#a5b4fc; font-weight:700; cursor:pointer; transition:all .2s; font-size:.9rem;
-  }
-  .lvl-btn.on { background:#6366f1; color:#fff; box-shadow:0 0 18px #6366f155; }
-  .hint { font-size:.8rem; color:#475569; line-height:1.5; margin-bottom:1.3rem; }
+    /* SETUP */
+    #s-setup { background:radial-gradient(ellipse at 50% 30%, #0f172a, #000); }
+    .box {
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.15);
+      border-radius:1.4rem; padding:2.2rem 2.8rem; text-align:center;
+      color:#fff; width:min(420px,92vw);
+    }
+    .box h2 { font-size:1.7rem; font-weight:800; margin-bottom:1.6rem;
+      background:linear-gradient(135deg,#7df9ff,#a78bfa);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text; }
+    .row { display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:1.3rem; }
+    .row label { color:#c4b5fd; font-size:.97rem; }
+    .toggle { position:relative; width:52px; height:27px; cursor:pointer; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .knob {
+      position:absolute; inset:0; background:#334155; border-radius:27px;
+      transition:background .3s;
+    }
+    .knob::before {
+      content:''; position:absolute; top:3px; left:3px;
+      width:21px; height:21px; background:#fff; border-radius:50%;
+      transition:transform .3s;
+    }
+    .toggle input:checked ~ .knob { background:#6366f1; }
+    .toggle input:checked ~ .knob::before { transform:translateX(25px); }
+    .lvl-row { display:flex; gap:.8rem; justify-content:center; margin-bottom:1.5rem; }
+    .lvl-btn {
+      padding:.6rem 1.5rem; border:2px solid #6366f1; border-radius:50px;
+      background:transparent; color:#a5b4fc; font-weight:700; cursor:pointer;
+      transition:all .2s; font-size:.9rem;
+    }
+    .lvl-btn.on { background:#6366f1; color:#fff; box-shadow:0 0 18px #6366f155; }
+    .hint { font-size:.8rem; color:#94a3b8; line-height:1.5; margin-bottom:1.3rem; }
 
-  /* END */
-  #s-end { background:rgba(0,0,0,.9); }
-  #s-end h2 { font-size:clamp(2rem,6vw,3rem); font-weight:900;
-    background:linear-gradient(135deg,#fbbf24,#f59e0b);
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:.4rem; }
-  #final-score { font-size:clamp(4rem,12vw,7rem); font-weight:900; color:#7df9ff;
-    text-shadow:0 0 30px #7df9ff77; }
-  #end-msg { color:#94a3b8; margin:.4rem 0 1.8rem; font-size:1rem; }
-  .btn-row { display:flex; gap:.8rem; flex-wrap:wrap; justify-content:center; }
+    /* END */
+    #s-end { background:rgba(0,0,0,.92); }
+    #s-end h2 { font-size:clamp(2rem,6vw,3rem); font-weight:900;
+      background:linear-gradient(135deg,#fbbf24,#f59e0b);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text; margin-bottom:.4rem; }
+    #final-score { font-size:clamp(4rem,12vw,7rem); font-weight:900; color:#7df9ff;
+      text-shadow:0 0 30px #7df9ff77; }
+    #end-msg { color:#94a3b8; margin:.4rem 0 1.8rem; font-size:1rem; }
+    .btn-row { display:flex; gap:.8rem; flex-wrap:wrap; justify-content:center; }
 
-  /* BUTTONS */
-  .btn {
-    padding:.8rem 2.2rem; font-size:1rem; font-weight:700; letter-spacing:.08em;
-    text-transform:uppercase; border:none; cursor:pointer; border-radius:50px;
-    background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff;
-    box-shadow:0 0 20px #6366f155; transition:transform .15s;
-  }
-  .btn:hover { transform:scale(1.07); }
-  .btn.red { background:linear-gradient(135deg,#ef4444,#f97316); }
-  .btn.ghost { background:transparent; border:1px solid #334155; font-size:.85rem; box-shadow:none; }
-
-  /* ── GAME CANVAS ── */
-  #gameCanvas { position:fixed; inset:0; display:block; }
-
-  /* ── HUD ── */
-  #hud {
-    position:fixed; top:0; left:0; right:0; z-index:50;
-    display:flex; justify-content:space-between; align-items:flex-start;
-    padding:.7rem 1rem; pointer-events:none;
-  }
-  .hud-panel {
-    background:rgba(15,23,42,.82); border:1px solid rgba(99,102,241,.3);
-    border-radius:.7rem; padding:.4rem .9rem; color:#fff; font-size:1.05rem; font-weight:700;
-  }
-  #hud-score { color:#7df9ff; }
-  #hud-level { color:#a78bfa; }
-  #hud-timer { color:#fbbf24; }
-
-  /* ── CROSSHAIR ── */
-  #crosshair {
-    position:fixed; pointer-events:none; z-index:60;
-    transform:translate(-50%,-50%);
-  }
-  #crosshair svg { display:block; }
-
-  /* ── GAZE BAR ── */
-  #gaze-bar-wrap {
-    position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
-    width:200px; height:10px; background:rgba(255,255,255,.15);
-    border-radius:10px; overflow:hidden; z-index:60; opacity:0; transition:opacity .2s;
-  }
-  #gaze-bar { height:100%; width:0%; background:linear-gradient(90deg,#7df9ff,#6366f1); border-radius:10px; transition:width .05s linear; }
-
-  /* ── FLOATING SCORE POPS ── */
-  .pop {
-    position:fixed; font-size:1.6rem; font-weight:900; pointer-events:none; z-index:70;
-    animation:pop-up .9s ease-out forwards;
-  }
-  @keyframes pop-up{ 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-80px) scale(1.3)} }
-</style>
+    /* BUTTONS */
+    .btn {
+      padding:.8rem 2.2rem; font-size:1rem; font-weight:700; letter-spacing:.08em;
+      text-transform:uppercase; border:none; cursor:pointer; border-radius:50px;
+      background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff;
+      box-shadow:0 0 20px #6366f155; transition:transform .15s;
+    }
+    .btn:hover { transform:scale(1.07); }
+    .btn.red { background:linear-gradient(135deg,#ef4444,#f97316); }
+    .btn.ghost { background:transparent; border:1px solid #334155;
+      font-size:.85rem; box-shadow:none; }
+  </style>
 </head>
 <body>
 
@@ -151,19 +121,27 @@
         <span class="knob"></span>
       </label>
     </div>
+    <div class="row">
+      <label>Sound Effects</label>
+      <label class="toggle">
+        <input type="checkbox" id="sfx-chk" checked>
+        <span class="knob"></span>
+      </label>
+    </div>
     <div class="row" style="flex-direction:column;gap:.5rem;">
       <label style="margin-bottom:.2rem;">Select Level</label>
       <div class="lvl-row">
-        <button class="lvl-btn on" id="lb1" onclick="pickLevel(1)">&#127780; Level 1 &bull; Easy</button>
-        <button class="lvl-btn"    id="lb2" onclick="pickLevel(2)">&#9928; Level 2 &bull; Hard</button>
+        <button class="lvl-btn on" id="lb1" onclick="pickLevel(1)">&#127780; Level 1 &bull; Day Sky</button>
+        <button class="lvl-btn"    id="lb2" onclick="pickLevel(2)">&#9928; Level 2 &bull; Night Storm</button>
       </div>
     </div>
     <p class="hint">
-      Move your mouse to aim the ring cursor at orbs.<br>
-      Hold your gaze on an orb for 1.5 s to collect it!<br>
-      Blue orbs = +10 pts &nbsp;|&nbsp; Red orbs = &minus;5 pts
+      Look at orbs with the gaze cursor to collect them!<br>
+      Hold gaze for ~1.5 s to collect.<br>
+      Blue orbs = +10 pts &nbsp;|&nbsp; Red orbs = &minus;5 pts<br><br>
+      <strong>Tip:</strong> In VR mode, tilt head down slightly to move forward.
     </p>
-    <button class="btn" onclick="launchGame()">&#128640; Launch Game</button><br>
+    <button class="btn" onclick="launchGame()">&#128640; Launch VR Game</button><br>
     <button class="btn ghost" onclick="goFlash()" style="margin-top:.6rem;">&#8592; Back</button>
   </div>
 </div>
@@ -180,404 +158,846 @@
   </div>
 </div>
 
-<!-- ══════════ GAME CANVAS ══════════ -->
-<canvas id="gameCanvas"></canvas>
+<!-- ══════════ A-FRAME SCENE (hidden until game starts) ══════════ -->
+<div id="game-container" class="hidden">
+<a-scene
+  id="scene"
+  vr-mode-ui="enabled: true"
+  embedded
+  renderer="antialias: true"
+  style="position:fixed;inset:0;"
+>
+  <!-- ── ASSETS ── -->
+  <a-assets>
+    <!-- Orb textures generated via img data URIs -->
+    <canvas id="blue-orb-tex" width="256" height="256"></canvas>
+    <canvas id="red-orb-tex" width="256" height="256"></canvas>
+    <canvas id="ground-tex" width="512" height="512"></canvas>
+    <canvas id="star-tex" width="64" height="64"></canvas>
+  </a-assets>
 
-<!-- ══════════ HUD ══════════ -->
-<div id="hud" class="hidden">
-  <div class="hud-panel" id="hud-score">Score: 0</div>
-  <div class="hud-panel" id="hud-level">Level 1</div>
-  <div class="hud-panel" id="hud-timer">Time: 60</div>
+  <!-- ── CAMERA RIG (with gaze cursor + HUD) ── -->
+  <a-entity id="rig" position="0 1.6 0" movement-controls>
+    <a-camera id="cam" look-controls="pointerLockEnabled:false" wasd-controls="enabled:false">
+      <!-- GAZE CURSOR -->
+      <a-entity
+        cursor="fuse:true; fuseTimeout:1500"
+        raycaster="objects:.orb; far:80"
+        position="0 0 -1"
+        geometry="primitive:ring; radiusInner:0.015; radiusOuter:0.025"
+        material="color:#7df9ff; shader:flat; opacity:0.9"
+        animation__fuse="property:geometry.radiusInner; from:0.015; to:0.001;
+          dur:1500; easing:linear; startEvents:fusing"
+        animation__reset="property:geometry.radiusInner; to:0.015;
+          dur:200; startEvents:mouseleave"
+      >
+        <!-- Fuse progress ring -->
+        <a-entity
+          id="fuse-ring"
+          geometry="primitive:ring; radiusInner:0.028; radiusOuter:0.035;
+            thetaStart:0; thetaLength:0"
+          material="color:#ffffff; shader:flat; opacity:0.8"
+        ></a-entity>
+      </a-entity>
+
+      <!-- HUD: Score -->
+      <a-text
+        id="hud-score"
+        value="Score: 0"
+        position="0.5 0.38 -1"
+        width="1.2"
+        color="#7df9ff"
+        font="mozillavr"
+        anchor="left"
+      ></a-text>
+
+      <!-- HUD: Level -->
+      <a-text
+        id="hud-level"
+        value="Level 1"
+        position="0 0.38 -1"
+        width="1"
+        color="#a78bfa"
+        font="mozillavr"
+        anchor="center"
+      ></a-text>
+
+      <!-- HUD: Timer -->
+      <a-text
+        id="hud-timer"
+        value="Time: 60"
+        position="0.45 0.38 -1"
+        width="1.2"
+        color="#fbbf24"
+        font="mozillavr"
+        anchor="right"
+      ></a-text>
+
+      <!-- HUD: Message -->
+      <a-text
+        id="hud-msg"
+        value=""
+        position="0 -0.3 -1"
+        width="1.5"
+        color="#ffffff"
+        font="mozillavr"
+        anchor="center"
+        visible="false"
+      ></a-text>
+    </a-camera>
+  </a-entity>
+
+  <!-- ── ENVIRONMENT: will be built by JS based on level ── -->
+  <a-entity id="env-container"></a-entity>
+
+  <!-- ── ORB CONTAINER ── -->
+  <a-entity id="orb-container"></a-entity>
+
+  <!-- ── BACKGROUND MUSIC (non-positional, looped) ── -->
+  <a-entity id="bg-music"></a-entity>
+
+  <!-- ── SFX ENTITIES ── -->
+  <a-entity id="sfx-collect" position="0 1.6 0"></a-entity>
+  <a-entity id="sfx-bad" position="0 1.6 0"></a-entity>
+
+</a-scene>
 </div>
-
-<!-- ══════════ CROSSHAIR ══════════ -->
-<div id="crosshair">
-  <svg width="36" height="36" viewBox="0 0 36 36">
-    <circle cx="18" cy="18" r="14" fill="none" stroke="#7df9ff" stroke-width="2" opacity="0.8"/>
-    <circle cx="18" cy="18" r="3"  fill="#7df9ff" opacity="0.9"/>
-    <circle id="gaze-ring" cx="18" cy="18" r="14" fill="none"
-            stroke="#ffffff" stroke-width="2.5"
-            stroke-dasharray="0 88" stroke-linecap="round"
-            transform="rotate(-90 18 18)" opacity="0.9"/>
-  </svg>
-</div>
-
-<!-- ══════════ GAZE PROGRESS BAR ══════════ -->
-<div id="gaze-bar-wrap"><div id="gaze-bar"></div></div>
 
 <script>
 'use strict';
 
-// ─── CONFIG ───────────────────────────────
-const FUSE_MS    = 150;   // ms to gaze before collecting
-const LEVEL_TIME = 60;     // seconds per level
-const GOOD_PTS   = 10;
-const BAD_PTS    = 5;
+// ───────────────────────────────────────────
+// GLOBAL GAME STATE
+// ───────────────────────────────────────────
+const LEVEL_TIME = 60;
+const GOOD_PTS = 10;
+const BAD_PTS = 5;
+const FUSE_MS = 1500;
+const MAX_ORBS_L1 = 6;
+const MAX_ORBS_L2 = 10;
 
-// ─── STATE ────────────────────────────────
-let level=1, score=0, timeLeft=LEVEL_TIME;
-let running=false, musicOn=true;
-let timerInterval=null, spawnTimeout=null;
-let orbs=[];          // active orb objects
-let gazeTarget=null;  // orb currently being gazed at
-let gazeStart=0;      // timestamp gaze began
-let mx=window.innerWidth/2, my=window.innerHeight/2; // mouse pos
+let level = 1, score = 0, timeLeft = LEVEL_TIME;
+let running = false, musicOn = true, sfxOn = true;
+let chosenLevel = 1;
+let timerInterval = null, spawnInterval = null;
+let audioCtx = null;
+let bgOsc = null, bgGain = null, bgInterval = null;
 
-// ─── CANVAS SETUP ─────────────────────────
-const canvas = document.getElementById('gameCanvas');
-const ctx    = canvas.getContext('2d');
-
-function resize(){
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', ()=>{ resize(); buildStars(); });
-resize();
-
-// ─── CROSSHAIR follows mouse ──────────────
-const crosshair = document.getElementById('crosshair');
-document.addEventListener('mousemove', e=>{
-  mx = e.clientX; my = e.clientY;
-  crosshair.style.left = mx+'px';
-  crosshair.style.top  = my+'px';
+// ───────────────────────────────────────────
+// TEXTURE GENERATION (so we have "own textures")
+// ───────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  generateBlueOrbTexture();
+  generateRedOrbTexture();
+  generateGroundTexture();
+  generateStarTexture();
 });
-// Centre crosshair initially
-crosshair.style.left = mx+'px';
-crosshair.style.top  = my+'px';
 
-// ─── STARS (background) ───────────────────
-let stars=[];
-function buildStars(){
-  stars=[];
-  for(let i=0;i<180;i++){
-    stars.push({
-      x:Math.random()*canvas.width,
-      y:Math.random()*canvas.height,
-      r:Math.random()*1.4+.3,
-      a:Math.random()
-    });
+function generateBlueOrbTexture() {
+  const c = document.getElementById('blue-orb-tex');
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(90, 80, 10, 128, 128, 128);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(0.15, '#7df9ff');
+  g.addColorStop(0.5, '#3b82f6');
+  g.addColorStop(0.85, '#1e3a8a');
+  g.addColorStop(1, '#0c1445');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  // Specular highlight
+  const hl = ctx.createRadialGradient(85, 75, 0, 95, 85, 55);
+  hl.addColorStop(0, 'rgba(255,255,255,0.9)');
+  hl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hl;
+  ctx.fillRect(0, 0, 256, 256);
+  // Swirl pattern for texture detail
+  ctx.strokeStyle = 'rgba(125,249,255,0.15)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) {
+    ctx.beginPath();
+    ctx.arc(128, 128, 40 + i * 15, i * 0.5, i * 0.5 + 3);
+    ctx.stroke();
   }
 }
-buildStars();
 
-// ─── AUDIO (Web Audio, no files needed) ───
-let audioCtx=null;
-function ac(){
-  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  if(audioCtx.state==='suspended') audioCtx.resume();
+function generateRedOrbTexture() {
+  const c = document.getElementById('red-orb-tex');
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(90, 80, 10, 128, 128, 128);
+  g.addColorStop(0, '#ffffff');
+  g.addColorStop(0.15, '#fca5a5');
+  g.addColorStop(0.5, '#ef4444');
+  g.addColorStop(0.85, '#991b1b');
+  g.addColorStop(1, '#450a0a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  const hl = ctx.createRadialGradient(85, 75, 0, 95, 85, 55);
+  hl.addColorStop(0, 'rgba(255,255,255,0.9)');
+  hl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hl;
+  ctx.fillRect(0, 0, 256, 256);
+  // Cracks / lightning pattern
+  ctx.strokeStyle = 'rgba(255,200,200,0.2)';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.moveTo(128, 128);
+    let x = 128, y = 128;
+    for (let j = 0; j < 5; j++) {
+      x += (Math.random() - 0.5) * 60;
+      y += (Math.random() - 0.5) * 60;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+function generateGroundTexture() {
+  const c = document.getElementById('ground-tex');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, 512, 512);
+  // Grid lines
+  ctx.strokeStyle = 'rgba(99,102,241,0.2)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 512; i += 32) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
+  }
+  // Random dots for variety
+  for (let i = 0; i < 200; i++) {
+    ctx.fillStyle = `rgba(99,102,241,${Math.random() * 0.15})`;
+    ctx.beginPath();
+    ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function generateStarTexture() {
+  const c = document.getElementById('star-tex');
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.3, 'rgba(200,220,255,0.6)');
+  g.addColorStop(1, 'rgba(200,220,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+}
+
+// ───────────────────────────────────────────
+// WEB AUDIO – SOUND EFFECTS & MUSIC
+// ───────────────────────────────────────────
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
-function beep(freq,type,dur,vol){
-  vol=vol||0.25;
-  try{
-    const c=ac(), o=c.createOscillator(), g=c.createGain();
+
+function beep(freq, type, dur, vol) {
+  if (!sfxOn) return;
+  try {
+    const c = getAudioCtx();
+    const o = c.createOscillator();
+    const g = c.createGain();
     o.connect(g); g.connect(c.destination);
-    o.type=type; o.frequency.value=freq;
-    g.gain.setValueAtTime(vol,c.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
-    o.start(); o.stop(c.currentTime+dur);
-  }catch(e){}
-}
-function sndCollect(){ beep(523,'sine',.1); setTimeout(()=>beep(659,'sine',.1),65); setTimeout(()=>beep(784,'sine',.2),130); }
-function sndWrong()  { beep(260,'sawtooth',.08,.2); setTimeout(()=>beep(160,'sawtooth',.13,.2),70); }
-
-let bgMusicTimer=null, bgIdx=0;
-const BG=[261,293,329,349,392,440,493,523];
-function startMusic(){ if(!musicOn||bgMusicTimer)return; bgMusicTimer=setInterval(()=>{ if(musicOn)beep(BG[bgIdx++%BG.length],'triangle',.36,.055); },480); }
-function stopMusic() { clearInterval(bgMusicTimer); bgMusicTimer=null; }
-
-// ─── NAV HELPERS ──────────────────────────
-function show(id){ document.getElementById(id).classList.remove('hidden'); }
-function hide(id){ document.getElementById(id).classList.add('hidden'); }
-
-function goFlash(){
-  hide('s-setup'); hide('s-end'); show('s-flash');
-  hide('hud'); stopGame();
-}
-function goSetup(){
-  hide('s-flash'); hide('s-end'); show('s-setup');
-  hide('hud'); stopGame();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.25, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+    o.start(); o.stop(c.currentTime + dur);
+  } catch (e) {}
 }
 
-let chosenLevel=1;
-function pickLevel(l){
-  chosenLevel=l;
-  document.getElementById('lb1').className='lvl-btn'+(l===1?' on':'');
-  document.getElementById('lb2').className='lvl-btn'+(l===2?' on':'');
+function sndCollect() {
+  beep(523, 'sine', 0.1);
+  setTimeout(() => beep(659, 'sine', 0.1), 65);
+  setTimeout(() => beep(784, 'sine', 0.2), 130);
+}
+function sndBad() {
+  beep(260, 'sawtooth', 0.08, 0.2);
+  setTimeout(() => beep(160, 'sawtooth', 0.13, 0.2), 70);
+}
+function sndLevelUp() {
+  beep(523, 'sine', 0.12); setTimeout(() => beep(659, 'sine', 0.12), 100);
+  setTimeout(() => beep(784, 'sine', 0.12), 200); setTimeout(() => beep(1047, 'sine', 0.3), 300);
+}
+function sndGameOver() {
+  beep(440, 'triangle', 0.2); setTimeout(() => beep(349, 'triangle', 0.2), 150);
+  setTimeout(() => beep(261, 'triangle', 0.5, 0.3), 300);
 }
 
-// ─── LAUNCH GAME ──────────────────────────
-function launchGame(){
+// Background music – simple arpeggio
+const BG_NOTES_L1 = [261, 329, 392, 523, 392, 329];
+const BG_NOTES_L2 = [220, 261, 330, 440, 330, 261];
+let bgNoteIdx = 0;
+
+function startMusic() {
+  if (!musicOn) return;
+  stopMusic();
+  bgNoteIdx = 0;
+  bgInterval = setInterval(() => {
+    if (!musicOn || !running) return;
+    const notes = level === 1 ? BG_NOTES_L1 : BG_NOTES_L2;
+    try {
+      const c = getAudioCtx();
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type = level === 1 ? 'triangle' : 'sawtooth';
+      o.frequency.value = notes[bgNoteIdx % notes.length];
+      g.gain.setValueAtTime(0.04, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
+      o.start(); o.stop(c.currentTime + 0.45);
+      bgNoteIdx++;
+    } catch (e) {}
+  }, 500);
+}
+function stopMusic() {
+  clearInterval(bgInterval); bgInterval = null;
+}
+
+// ───────────────────────────────────────────
+// A-FRAME COMPONENTS
+// ───────────────────────────────────────────
+
+// ── Head-tilt forward movement ──
+AFRAME.registerComponent('movement-controls', {
+  schema: { speed: { type: 'number', default: 2.5 } },
+  tick: function (time, dt) {
+    if (!running) return;
+    const cam = this.el.querySelector('#cam');
+    if (!cam) return;
+    const rotation = cam.object3D.rotation;
+    // Tilt head down → move forward in look direction
+    if (rotation.x < -0.18) {
+      const speed = this.data.speed * (dt / 1000);
+      const direction = new THREE.Vector3(0, 0, -1);
+      direction.applyQuaternion(cam.object3D.quaternion);
+      direction.y = 0; // Stay on ground plane
+      direction.normalize().multiplyScalar(speed);
+      this.el.object3D.position.add(direction);
+    }
+  }
+});
+
+// ── Orb component – floats, bobs, handles gaze collect ──
+AFRAME.registerComponent('orb', {
+  schema: {
+    bad: { type: 'boolean', default: false },
+    speed: { type: 'number', default: 0.5 }
+  },
+  init: function () {
+    this.startY = this.el.object3D.position.y;
+    this.time = Math.random() * 1000;
+    this.collected = false;
+
+    // Set texture based on type
+    const texId = this.data.bad ? '#red-orb-tex' : '#blue-orb-tex';
+    this.el.setAttribute('material', {
+      src: texId,
+      emissive: this.data.bad ? '#ff3333' : '#3388ff',
+      emissiveIntensity: 0.4,
+      roughness: 0.2,
+      metalness: 0.6
+    });
+
+    // Glow ring child
+    const ring = document.createElement('a-torus');
+    ring.setAttribute('radius', 0.7);
+    ring.setAttribute('radius-tubular', 0.015);
+    ring.setAttribute('material', {
+      color: this.data.bad ? '#ef4444' : '#7df9ff',
+      emissive: this.data.bad ? '#ef4444' : '#7df9ff',
+      emissiveIntensity: 0.5,
+      shader: 'flat',
+      opacity: 0.5
+    });
+    ring.setAttribute('rotation', '90 0 0');
+    this.el.appendChild(ring);
+
+    // Point light for glow
+    const light = document.createElement('a-entity');
+    light.setAttribute('light', {
+      type: 'point',
+      color: this.data.bad ? '#ef4444' : '#7df9ff',
+      intensity: 0.5,
+      distance: 5
+    });
+    this.el.appendChild(light);
+
+    // GAZE EVENTS
+    this.el.addEventListener('click', () => {
+      if (!running || this.collected) return;
+      this.collect();
+    });
+
+    // Fuse animation feedback
+    this.el.addEventListener('fusing', () => {
+      if (this.collected) return;
+      this.el.setAttribute('animation', {
+        property: 'scale',
+        to: '1.3 1.3 1.3',
+        dur: FUSE_MS,
+        easing: 'linear'
+      });
+    });
+    this.el.addEventListener('mouseleave', () => {
+      this.el.removeAttribute('animation');
+      this.el.setAttribute('scale', '1 1 1');
+    });
+  },
+
+  collect: function () {
+    if (this.collected) return;
+    this.collected = true;
+
+    if (this.data.bad) {
+      score = Math.max(0, score - BAD_PTS);
+      sndBad();
+      showHUDMessage('-5', '#ef4444');
+    } else {
+      score += GOOD_PTS;
+      sndCollect();
+      showHUDMessage('+10', '#7df9ff');
+    }
+    updateHUD();
+
+    // Disappear animation
+    this.el.setAttribute('animation', {
+      property: 'scale',
+      to: '0 0 0',
+      dur: 300,
+      easing: 'easeInQuad'
+    });
+    setTimeout(() => {
+      if (this.el.parentNode) this.el.parentNode.removeChild(this.el);
+    }, 350);
+  },
+
+  tick: function (time, dt) {
+    if (this.collected || !running) return;
+    this.time += dt;
+    // Bob up and down
+    const bobY = Math.sin(this.time * 0.002) * 0.4;
+    this.el.object3D.position.y = this.startY + bobY;
+    // Gentle rotation
+    this.el.object3D.rotation.y += dt * 0.001;
+    // Slow drift downward
+    this.el.object3D.position.y -= this.data.speed * dt * 0.0003;
+    // If fallen below ground, respawn
+    if (this.el.object3D.position.y < -1) {
+      this.respawn();
+    }
+  },
+
+  respawn: function () {
+    const rigPos = document.getElementById('rig').object3D.position;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 8 + Math.random() * 20;
+    this.el.object3D.position.set(
+      rigPos.x + Math.sin(angle) * dist,
+      3 + Math.random() * 8,
+      rigPos.z + Math.cos(angle) * dist
+    );
+    this.startY = this.el.object3D.position.y;
+    this.time = Math.random() * 1000;
+  }
+});
+
+// ── Collision detection component ──
+AFRAME.registerComponent('collision-check', {
+  tick: function () {
+    if (!running) return;
+    const rigPos = document.getElementById('rig').object3D.position;
+    const orbs = document.querySelectorAll('.orb');
+    orbs.forEach(orbEl => {
+      const orbComp = orbEl.components.orb;
+      if (!orbComp || orbComp.collected) return;
+      const orbPos = orbEl.object3D.position;
+      const dx = rigPos.x - orbPos.x;
+      const dy = (rigPos.y) - orbPos.y;
+      const dz = rigPos.z - orbPos.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      // Auto-collect if player walks into orb
+      if (dist < 1.8) {
+        orbComp.collect();
+      }
+    });
+  }
+});
+
+// ───────────────────────────────────────────
+// NAVIGATION
+// ───────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+function goFlash() {
+  stopGame();
+  hide('s-setup'); hide('s-end'); hide('game-container');
+  show('s-flash');
+}
+function goSetup() {
+  stopGame();
+  hide('s-flash'); hide('s-end'); hide('game-container');
+  show('s-setup');
+}
+function pickLevel(l) {
+  chosenLevel = l;
+  document.getElementById('lb1').className = 'lvl-btn' + (l === 1 ? ' on' : '');
+  document.getElementById('lb2').className = 'lvl-btn' + (l === 2 ? ' on' : '');
+}
+
+// ───────────────────────────────────────────
+// BUILD ENVIRONMENT
+// ───────────────────────────────────────────
+function buildEnvironment() {
+  const env = document.getElementById('env-container');
+  env.innerHTML = '';
+
+  // Ground plane with custom texture
+  const ground = document.createElement('a-plane');
+  ground.setAttribute('rotation', '-90 0 0');
+  ground.setAttribute('width', '200');
+  ground.setAttribute('height', '200');
+  ground.setAttribute('material', {
+    src: '#ground-tex',
+    repeat: '20 20',
+    roughness: 0.9
+  });
+  ground.setAttribute('position', '0 0 0');
+  env.appendChild(ground);
+
+  if (level === 1) {
+    // ── LEVEL 1: Day Sky ──
+    // Sky
+    const sky = document.createElement('a-sky');
+    sky.setAttribute('color', '#0c2461');
+    sky.setAttribute('material', {
+      shader: 'flat',
+      color: '#0c2461'
+    });
+    env.appendChild(sky);
+
+    // Sun
+    const sun = document.createElement('a-sphere');
+    sun.setAttribute('position', '30 40 -60');
+    sun.setAttribute('radius', '5');
+    sun.setAttribute('material', {
+      color: '#fbbf24',
+      emissive: '#fbbf24',
+      emissiveIntensity: 1,
+      shader: 'flat'
+    });
+    env.appendChild(sun);
+
+    // Sunlight
+    const sunlight = document.createElement('a-entity');
+    sunlight.setAttribute('light', { type: 'directional', color: '#ffeedd', intensity: 0.6 });
+    sunlight.setAttribute('position', '1 2 -1');
+    env.appendChild(sunlight);
+
+    // Ambient light
+    const amb = document.createElement('a-entity');
+    amb.setAttribute('light', { type: 'ambient', color: '#334488', intensity: 0.5 });
+    env.appendChild(amb);
+
+    // Clouds
+    for (let i = 0; i < 15; i++) {
+      const cloud = document.createElement('a-entity');
+      const cx = (Math.random() - 0.5) * 120;
+      const cy = 15 + Math.random() * 15;
+      const cz = (Math.random() - 0.5) * 120;
+      cloud.setAttribute('position', `${cx} ${cy} ${cz}`);
+      for (let j = 0; j < 3; j++) {
+        const puff = document.createElement('a-sphere');
+        puff.setAttribute('position', `${(Math.random()-0.5)*3} ${(Math.random()-0.5)*1} ${(Math.random()-0.5)*2}`);
+        puff.setAttribute('radius', 1.5 + Math.random() * 2);
+        puff.setAttribute('material', {
+          color: '#ffffff',
+          opacity: 0.7,
+          transparent: true,
+          shader: 'flat'
+        });
+        cloud.appendChild(puff);
+      }
+      env.appendChild(cloud);
+    }
+
+    // Floating islands (decorative)
+    for (let i = 0; i < 5; i++) {
+      const island = document.createElement('a-cylinder');
+      island.setAttribute('position',
+        `${(Math.random()-0.5)*80} ${2+Math.random()*6} ${(Math.random()-0.5)*80}`);
+      island.setAttribute('radius', 2 + Math.random() * 3);
+      island.setAttribute('height', 1 + Math.random() * 2);
+      island.setAttribute('material', {
+        color: '#2d5a27',
+        roughness: 1
+      });
+      env.appendChild(island);
+    }
+
+  } else {
+    // ── LEVEL 2: Night Storm ──
+    const sky = document.createElement('a-sky');
+    sky.setAttribute('material', { shader: 'flat', color: '#0a0a15' });
+    env.appendChild(sky);
+
+    // Dim ambient
+    const amb = document.createElement('a-entity');
+    amb.setAttribute('light', { type: 'ambient', color: '#220033', intensity: 0.4 });
+    env.appendChild(amb);
+
+    // Moon
+    const moon = document.createElement('a-sphere');
+    moon.setAttribute('position', '-20 35 -50');
+    moon.setAttribute('radius', '3');
+    moon.setAttribute('material', {
+      color: '#ccccdd',
+      emissive: '#666688',
+      emissiveIntensity: 0.5,
+      shader: 'flat'
+    });
+    env.appendChild(moon);
+
+    // Moonlight
+    const moonlight = document.createElement('a-entity');
+    moonlight.setAttribute('light', { type: 'directional', color: '#6666aa', intensity: 0.3 });
+    moonlight.setAttribute('position', '-1 2 -1');
+    env.appendChild(moonlight);
+
+    // Stars using particles (small spheres)
+    for (let i = 0; i < 80; i++) {
+      const star = document.createElement('a-sphere');
+      star.setAttribute('position',
+        `${(Math.random()-0.5)*150} ${20+Math.random()*50} ${(Math.random()-0.5)*150}`);
+      star.setAttribute('radius', 0.05 + Math.random() * 0.1);
+      star.setAttribute('material', {
+        color: '#ffffff',
+        emissive: '#ffffff',
+        emissiveIntensity: 1,
+        shader: 'flat'
+      });
+      env.appendChild(star);
+    }
+
+    // Dark pillars
+    for (let i = 0; i < 8; i++) {
+      const pillar = document.createElement('a-cylinder');
+      pillar.setAttribute('position',
+        `${(Math.random()-0.5)*60} ${4} ${(Math.random()-0.5)*60}`);
+      pillar.setAttribute('radius', 0.8 + Math.random() * 1.2);
+      pillar.setAttribute('height', 8 + Math.random() * 10);
+      pillar.setAttribute('material', {
+        color: '#1a1a2e',
+        emissive: '#220044',
+        emissiveIntensity: 0.1,
+        roughness: 0.9
+      });
+      env.appendChild(pillar);
+    }
+
+    // Lightning flash component
+    const flash = document.createElement('a-entity');
+    flash.setAttribute('lightning-flash', '');
+    env.appendChild(flash);
+  }
+}
+
+// ── Lightning flash for level 2 ──
+AFRAME.registerComponent('lightning-flash', {
+  init: function () {
+    this.nextFlash = 3000 + Math.random() * 5000;
+    this.elapsed = 0;
+    this.sky = null;
+  },
+  tick: function (time, dt) {
+    if (!running || level !== 2) return;
+    this.elapsed += dt;
+    if (this.elapsed > this.nextFlash) {
+      this.elapsed = 0;
+      this.nextFlash = 3000 + Math.random() * 7000;
+      // Flash: briefly brighten ambient
+      const scene = this.el.sceneEl;
+      const amb = document.createElement('a-entity');
+      amb.setAttribute('light', { type: 'ambient', color: '#ffffff', intensity: 0.8 });
+      scene.appendChild(amb);
+      beep(80, 'sawtooth', 0.3, 0.1); // thunder rumble
+      setTimeout(() => { if (amb.parentNode) amb.parentNode.removeChild(amb); }, 150);
+    }
+  }
+});
+
+// ───────────────────────────────────────────
+// ORB SPAWNING
+// ───────────────────────────────────────────
+function spawnOrb() {
+  if (!running) return;
+  const container = document.getElementById('orb-container');
+  const rigPos = document.getElementById('rig').object3D.position;
+
+  const bad = level === 2 && Math.random() < 0.5;
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 8 + Math.random() * 18;
+  const x = rigPos.x + Math.sin(angle) * dist;
+  const y = 3 + Math.random() * 8;
+  const z = rigPos.z + Math.cos(angle) * dist;
+
+  let speed;
+  if (level === 1) {
+    speed = 0.3 + Math.random() * 0.4;
+  } else {
+    speed = bad ? (1.0 + Math.random() * 2.0) : (0.4 + Math.random() * 0.8);
+  }
+
+  const orb = document.createElement('a-sphere');
+  orb.classList.add('orb');
+  orb.setAttribute('position', `${x} ${y} ${z}`);
+  orb.setAttribute('radius', 0.5);
+  orb.setAttribute('orb', { bad: bad, speed: speed });
+  container.appendChild(orb);
+}
+
+function startSpawning() {
+  const maxOrbs = level === 1 ? MAX_ORBS_L1 : MAX_ORBS_L2;
+  const delay = level === 1 ? 1500 : 800;
+  spawnInterval = setInterval(() => {
+    if (!running) return;
+    const current = document.querySelectorAll('.orb').length;
+    if (current < maxOrbs) {
+      spawnOrb();
+    }
+  }, delay);
+  // Initial batch
+  for (let i = 0; i < Math.floor(maxOrbs / 2); i++) {
+    spawnOrb();
+  }
+}
+
+// ───────────────────────────────────────────
+// HUD
+// ───────────────────────────────────────────
+function updateHUD() {
+  const hs = document.getElementById('hud-score');
+  const hl = document.getElementById('hud-level');
+  const ht = document.getElementById('hud-timer');
+  if (hs) hs.setAttribute('value', 'Score: ' + score);
+  if (hl) hl.setAttribute('value', 'Level ' + level);
+  if (ht) {
+    ht.setAttribute('value', 'Time: ' + timeLeft);
+    ht.setAttribute('color', timeLeft <= 10 ? '#ef4444' : '#fbbf24');
+  }
+}
+
+function showHUDMessage(text, color) {
+  const msg = document.getElementById('hud-msg');
+  if (!msg) return;
+  msg.setAttribute('value', text);
+  msg.setAttribute('color', color || '#ffffff');
+  msg.setAttribute('visible', 'true');
+  setTimeout(() => {
+    msg.setAttribute('visible', 'false');
+  }, 800);
+}
+
+// ───────────────────────────────────────────
+// GAME LIFECYCLE
+// ───────────────────────────────────────────
+function launchGame() {
   musicOn = document.getElementById('music-chk').checked;
-  level   = chosenLevel;
+  sfxOn = document.getElementById('sfx-chk').checked;
+  level = chosenLevel;
   startRound();
 }
-function replayGame(){ hide('s-end'); startRound(); }
-function nextLevel() { chosenLevel=2; level=2; hide('s-end'); startRound(); }
 
-function startRound(){
-  score=0; timeLeft=LEVEL_TIME; running=true;
-  orbs=[]; gazeTarget=null;
+function startRound() {
+  score = 0;
+  timeLeft = LEVEL_TIME;
+  running = false; // will set true after setup
+
   hide('s-flash'); hide('s-setup'); hide('s-end');
-  show('hud');
+  show('game-container');
+
+  // Reset rig position
+  const rig = document.getElementById('rig');
+  if (rig) rig.object3D.position.set(0, 1.6, 0);
+
+  // Clear old orbs
+  const container = document.getElementById('orb-container');
+  container.innerHTML = '';
+
+  // Add collision check to rig
+  if (!rig.hasAttribute('collision-check')) {
+    rig.setAttribute('collision-check', '');
+  }
+
+  // Build environment
+  buildEnvironment();
   updateHUD();
-  stopGame();    // clear old intervals
-  running=true;
-  startTimer();
-  scheduleSpawn();
-  startMusic();
-  requestAnimationFrame(loop);
+
+  // Small delay to let scene build
+  setTimeout(() => {
+    running = true;
+    startTimer();
+    startSpawning();
+    startMusic();
+  }, 1000);
 }
 
-function stopGame(){
-  running=false;
-  clearInterval(timerInterval); timerInterval=null;
-  clearTimeout(spawnTimeout);   spawnTimeout=null;
+function stopGame() {
+  running = false;
+  clearInterval(timerInterval); timerInterval = null;
+  clearInterval(spawnInterval); spawnInterval = null;
   stopMusic();
-  orbs=[];
-  gazeTarget=null;
 }
 
-// ─── TIMER ────────────────────────────────
-function startTimer(){
+function startTimer() {
   clearInterval(timerInterval);
-  timerInterval=setInterval(()=>{
-    if(!running)return;
+  timerInterval = setInterval(() => {
+    if (!running) return;
     timeLeft--;
     updateHUD();
-    if(timeLeft<=0){ clearInterval(timerInterval); endGame(); }
-  },1000);
-}
-
-// ─── HUD ──────────────────────────────────
-function updateHUD(){
-  document.getElementById('hud-score').textContent = 'Score: '+score;
-  document.getElementById('hud-level').textContent = 'Level '+level;
-  const t=document.getElementById('hud-timer');
-  t.textContent='Time: '+timeLeft;
-  t.style.color=timeLeft<=10?'#ef4444':'#fbbf24';
-}
-
-// ─── ORB DEFINITIONS ──────────────────────
-// Each orb: {x,y,vy,r,bad,phase,speed,alpha}
-function makeOrb(){
-  const bad   = level===2 && Math.random()<0.6;
-  const r     = 28 + Math.random()*18;
-  const margin= r+20;
-  const x     = margin + Math.random()*(canvas.width -margin*2);
-  // Start from top, drift downward
-  const y     = -r - Math.random()*200;
-  let speed;
-
-if (level === 1) {
-  speed = 0.4 + Math.random() * 0.5; // normal
-} else {
-  if (bad) {
-    // RED orbs → faster
-    speed = 1.5 + Math.random() * 3.0;
-  } else {
-    // BLUE orbs → slower
-    speed = 0.6 + Math.random() * 1.2;
-  }
-}
-  return { x, y, r, bad, speed, phase:Math.random()*Math.PI*2, alpha:1, collected:false };
-}
-
-function scheduleSpawn(){
-  if(!running)return;
-  const delay = level===1 ? 900 : 600;
-  spawnTimeout=setTimeout(()=>{
-    if(!running)return;
-    // Keep between 5-9 orbs on screen
-    const target = level===1?5:9;
-    while(orbs.length<target) orbs.push(makeOrb());
-    scheduleSpawn();
-  }, delay);
-}
-
-// ─── GAZE DETECTION ───────────────────────
-const gazeRing  = document.getElementById('gaze-ring');
-const gazeWrap  = document.getElementById('gaze-bar-wrap');
-const gazeBar   = document.getElementById('gaze-bar');
-const CIRC      = 2*Math.PI*14; // circumference of crosshair ring (r=14)
-
-function checkGaze(){
-  let hit=null;
-  // Find topmost orb under cursor (reverse so latest spawned on top)
-  for(let i=orbs.length-1;i>=0;i--){
-    const o=orbs[i];
-    if(o.collected)continue;
-    const dx=mx-o.x, dy=my-o.y;
-    if(Math.sqrt(dx*dx+dy*dy)<o.r){ hit=o; break; }
-  }
-
-  if(hit!==gazeTarget){
-    gazeTarget=hit;
-    gazeStart=performance.now();
-  }
-
-  if(gazeTarget){
-    const elapsed=performance.now()-gazeStart;
-    const pct=Math.min(elapsed/FUSE_MS,1);
-    // Animate crosshair ring
-    gazeRing.setAttribute('stroke-dasharray', (pct*CIRC)+' '+(CIRC*(1-pct)));
-    // Gaze bar
-    gazeWrap.style.opacity='1';
-    gazeBar.style.width=(pct*100)+'%';
-    if(pct>=1){ collectOrb(gazeTarget); gazeTarget=null; }
-  } else {
-    gazeRing.setAttribute('stroke-dasharray','0 '+CIRC);
-    gazeWrap.style.opacity='0';
-    gazeBar.style.width='0%';
-  }
-}
-
-// ─── COLLECT ──────────────────────────────
-function collectOrb(orb){
-  if(orb.collected)return;
-  orb.collected=true;
-  if(orb.bad){
-    score=Math.max(0,score-BAD_PTS);
-    sndWrong();
-    popText('-5','#ef4444',orb.x,orb.y);
-  } else {
-    score+=GOOD_PTS;
-    sndCollect();
-    popText('+10','#7df9ff',orb.x,orb.y);
-  }
-  updateHUD();
-  // Remove after short burst
-  setTimeout(()=>{ orbs=orbs.filter(o=>o!==orb); },300);
-}
-
-// ─── FLOATING TEXT POP ────────────────────
-function popText(txt,color,x,y){
-  const el=document.createElement('div');
-  el.className='pop';
-  el.textContent=txt;
-  el.style.color=color;
-  el.style.left=x+'px';
-  el.style.top=y+'px';
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),900);
-}
-
-// ─── DRAW ─────────────────────────────────
-let frame=0;
-function loop(){
-  if(!running)return;
-  frame++;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // Sky gradient
-  const sky=ctx.createLinearGradient(0,0,0,canvas.height);
-  if(level===1){
-    sky.addColorStop(0,'#0c2461'); sky.addColorStop(1,'#1e90ff');
-  } else {
-    sky.addColorStop(0,'#0d0d0d'); sky.addColorStop(1,'#1a1a2e');
-  }
-  ctx.fillStyle=sky; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  // Stars
-  stars.forEach(s=>{
-    ctx.globalAlpha=s.a*(.5+.5*Math.sin(frame*.02+s.x));
-    ctx.fillStyle='#ffffff';
-    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
-  });
-  ctx.globalAlpha=1;
-
-  // Ground glow at bottom
-  const grd=ctx.createLinearGradient(0,canvas.height*.7,0,canvas.height);
-  grd.addColorStop(0,'rgba(0,0,0,0)');
-  grd.addColorStop(1,level===1?'rgba(30,80,255,0.18)':'rgba(80,0,80,0.18)');
-  ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  // Lightning flash Level 2
-  if(level===2 && Math.random()<.003){
-    ctx.fillStyle='rgba(255,255,255,0.07)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-  }
-
-  // Move & draw orbs
-  orbs.forEach(o=>{
-    if(o.collected)return;
-    // Drift down + gentle side bob
-    o.y += o.speed;
-    o.x += Math.sin(frame*.02+o.phase)*0.4;
-    o.phase+=0.01;
-    // Wrap around bottom
-    if(o.y>canvas.height+o.r){
-      o.y=-o.r; o.x=o.r+20+Math.random()*(canvas.width-o.r*2-40);
+    if (timeLeft <= 10 && timeLeft > 0) {
+      beep(880, 'sine', 0.05, 0.1); // tick warning
     }
-    drawOrb(o);
-  });
-
-  // Gaze check
-  checkGaze();
-
-  requestAnimationFrame(loop);
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      endGame();
+    }
+  }, 1000);
 }
 
-function drawOrb(o){
-  const x=o.x, y=o.y, r=o.r;
-  const pulsed=r*(1+.04*Math.sin(frame*.06+o.phase));
-
-  // Outer glow
-  const glow=ctx.createRadialGradient(x,y,pulsed*.5,x,y,pulsed*2.2);
-  if(o.bad){
-    glow.addColorStop(0,'rgba(239,68,68,0.35)');
-    glow.addColorStop(1,'rgba(239,68,68,0)');
-  } else {
-    glow.addColorStop(0,'rgba(125,249,255,0.35)');
-    glow.addColorStop(1,'rgba(125,249,255,0)');
-  }
-  ctx.fillStyle=glow;
-  ctx.beginPath(); ctx.arc(x,y,pulsed*2.2,0,Math.PI*2); ctx.fill();
-
-  // Orb body gradient
-  const body=ctx.createRadialGradient(x-r*.28,y-r*.28,r*.04, x,y,r);
-  if(o.bad){
-    body.addColorStop(0,'#ffffff');
-    body.addColorStop(.18,'#fca5a5');
-    body.addColorStop(.7,'#dc2626');
-    body.addColorStop(1,'#450a0a');
-  } else {
-    body.addColorStop(0,'#ffffff');
-    body.addColorStop(.18,'#7df9ff');
-    body.addColorStop(.7,'#1d4ed8');
-    body.addColorStop(1,'#0c1445');
-  }
-  ctx.fillStyle=body;
-  ctx.beginPath(); ctx.arc(x,y,pulsed,0,Math.PI*2); ctx.fill();
-
-  // Specular highlight
-  const hl=ctx.createRadialGradient(x-r*.3,y-r*.3,0, x-r*.2,y-r*.2,r*.38);
-  hl.addColorStop(0,'rgba(255,255,255,0.85)');
-  hl.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=hl;
-  ctx.beginPath(); ctx.arc(x-r*.15,y-r*.15,r*.38,0,Math.PI*2); ctx.fill();
-
-  // Ring
-  ctx.strokeStyle=o.bad?'rgba(239,68,68,0.6)':'rgba(125,249,255,0.6)';
-  ctx.lineWidth=2;
-  ctx.beginPath(); ctx.arc(x,y,pulsed*1.35,0,Math.PI*2); ctx.stroke();
-}
-
-// ─── END GAME ─────────────────────────────
-function endGame(){
+function endGame() {
   stopGame();
-  hide('hud');
-  document.getElementById('final-score').textContent=score;
-  document.getElementById('end-msg').textContent=
-    score>=100?'Outstanding collector! You\'re a natural!' :
-    score>=50 ?'Well done! Great orb hunter!' :
-               'Keep practising - you\'ll get there!';
-  document.getElementById('next-btn').style.display=level===1?'inline-block':'none';
+  sndGameOver();
+  hide('game-container');
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('end-msg').textContent =
+    score >= 100 ? "Outstanding collector! You're a natural!" :
+    score >= 50  ? 'Well done! Great orb hunter!' :
+                   'Keep practising — you\'ll get there!';
+  document.getElementById('next-btn').style.display = level === 1 ? 'inline-block' : 'none';
   show('s-end');
 }
 
-// ─── PREVENT SCROLL ON MOBILE ─────────────
-document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+function replayGame() {
+  hide('s-end');
+  startRound();
+}
+function nextLevel() {
+  chosenLevel = 2; level = 2;
+  hide('s-end');
+  startRound();
+}
+
+// ───────────────────────────────────────────
+// PREVENT SCROLL ON MOBILE
+// ───────────────────────────────────────────
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// Resume audio context on first interaction
+document.addEventListener('click', () => { getAudioCtx(); }, { once: true });
+document.addEventListener('touchstart', () => { getAudioCtx(); }, { once: true });
 </script>
 </body>
 </html>
