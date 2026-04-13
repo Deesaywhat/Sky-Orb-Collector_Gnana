@@ -12,9 +12,9 @@ For more details please refer to the SkyOrbCollector_Manual.html
 
 **This is the prompt I gave an AI engine as per the assignment requirements:**
 
-You are an expert web developer specializing in A-Frame and WebVR. I need you to build a complete, clean, and fully functional mobile VR game using A-Frame that works on desktop, mobile phones, and Google Cardboard-style VR.
+I need you to build a complete, clean, and fully functional mobile VR game using A-Frame that works on desktop, mobile phones, and Google Cardboard-style VR.
 
-Game Title: "Sky Orb Collector"
+Game Title: Sky Orb Collector
 Game Concept:
 The player is placed in the center of a 3D sky environment. Floating orbs appear around the player. The player collects orbs by gazing at them (no hand controls). When the player looks at an orb for a short duration, the orb disappears and the score increases.
 
