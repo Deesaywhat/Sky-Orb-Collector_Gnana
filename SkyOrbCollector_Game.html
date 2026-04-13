@@ -361,13 +361,25 @@ function updateHUD(){
 // ─── ORB DEFINITIONS ──────────────────────
 // Each orb: {x,y,vy,r,bad,phase,speed,alpha}
 function makeOrb(){
-  const bad   = level===2 && Math.random()<.3;
+  const bad   = level===2 && Math.random()<0.6;
   const r     = 28 + Math.random()*18;
   const margin= r+20;
   const x     = margin + Math.random()*(canvas.width -margin*2);
   // Start from top, drift downward
   const y     = -r - Math.random()*200;
-  const speed = level===1 ? (.4+Math.random()*.5) : (.9+Math.random()*1.1);
+  let speed;
+
+if (level === 1) {
+  speed = 0.4 + Math.random() * 0.5; // normal
+} else {
+  if (bad) {
+    // RED orbs → faster
+    speed = 1.5 + Math.random() * 1.5;
+  } else {
+    // BLUE orbs → slower
+    speed = 0.6 + Math.random() * 0.6;
+  }
+}
   return { x, y, r, bad, speed, phase:Math.random()*Math.PI*2, alpha:1, collected:false };
 }
 
